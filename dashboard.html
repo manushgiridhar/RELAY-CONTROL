@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Relay Control</title>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script src="firebase-config.js"></script>
+
+</head>
+
+<body>
+
+<h1>Relay Control</h1>
+
+<button onclick="relayOn()">ON</button>
+
+<button onclick="relayOff()">OFF</button>
+
+<br><br>
+
+<button onclick="logout()">Logout</button>
+
+<script>
+
+firebase.auth().onAuthStateChanged(user =>
+{
+  if(!user)
+  {
+    window.location.href="login.html";
+  }
+});
+
+function relayOn()
+{
+  firebase.database().ref("relay").set(1);
+}
+
+function relayOff()
+{
+  firebase.database().ref("relay").set(0);
+}
+
+function logout()
+{
+  firebase.auth().signOut();
+}
+
+</script>
+
+</body>
+</html>
