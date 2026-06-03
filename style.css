@@ -1,0 +1,91 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Segoe UI',sans-serif;
+}
+
+body{
+    background:#f4f7fc;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.container{
+    background:white;
+    padding:40px;
+    border-radius:20px;
+    width:400px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.1);
+    text-align:center;
+}
+
+h1,h2{
+    margin-bottom:20px;
+    color:#333;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    margin:10px 0;
+    border:1px solid #ccc;
+    border-radius:10px;
+    font-size:16px;
+}
+
+button{
+    border:none;
+    cursor:pointer;
+    font-size:16px;
+    transition:0.3s;
+}
+
+.login-btn{
+    width:100%;
+    padding:12px;
+    background:#2563eb;
+    color:white;
+    border-radius:10px;
+}
+
+.login-btn:hover{
+    transform:scale(1.03);
+}
+
+.relay-buttons{
+    display:flex;
+    gap:15px;
+    justify-content:center;
+    margin-top:25px;
+}
+
+.on-btn{
+    background:#22c55e;
+    color:white;
+    padding:15px 35px;
+    border-radius:12px;
+}
+
+.off-btn{
+    background:#ef4444;
+    color:white;
+    padding:15px 35px;
+    border-radius:12px;
+}
+
+.logout-btn{
+    margin-top:25px;
+    background:#374151;
+    color:white;
+    padding:12px 25px;
+    border-radius:10px;
+}
+
+.status{
+    margin-top:20px;
+    font-size:18px;
+    font-weight:bold;
+}
