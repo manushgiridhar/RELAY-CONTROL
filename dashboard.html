@@ -1,54 +1,132 @@
 <!DOCTYPE html>
 <html>
 <head>
-
-<title>Relay Control</title>
+<title>Relay Dashboard</title>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script src="firebase-config.js"></script>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Segoe UI',sans-serif;
+}
+
+body{
+    background:#0f172a;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.container{
+    background:#111827;
+    padding:40px;
+    border-radius:20px;
+    width:380px;
+    text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,0.4);
+    color:white;
+}
+
+h1{
+    margin-bottom:15px;
+}
+
+.status{
+    margin:20px 0;
+    font-size:18px;
+    padding:10px;
+    border-radius:10px;
+    background:#1f2937;
+}
+
+.buttons{
+    display:flex;
+    gap:15px;
+    justify-content:center;
+}
+
+button{
+    border:none;
+    padding:15px 25px;
+    border-radius:12px;
+    cursor:pointer;
+    font-size:16px;
+    transition:0.3s;
+}
+
+.on{
+    background:#22c55e;
+    color:white;
+}
+
+.off{
+    background:#ef4444;
+    color:white;
+}
+
+.logout{
+    margin-top:20px;
+    width:100%;
+    background:#374151;
+    color:white;
+}
+
+button:hover{
+    transform:scale(1.05);
+}
+</style>
 
 </head>
 
 <body>
 
-<h1>Relay Control</h1>
+<div class="container">
 
-<button onclick="relayOn()">ON</button>
+<h1>Relay Control Panel</h1>
 
-<button onclick="relayOff()">OFF</button>
+<div class="status" id="status">Relay OFF</div>
 
-<br><br>
+<div class="buttons">
+    <button class="on" onclick="relayOn()">ON</button>
+    <button class="off" onclick="relayOff()">OFF</button>
+</div>
 
-<button onclick="logout()">Logout</button>
+<button class="logout" onclick="logout()">LOGOUT</button>
+
+</div>
 
 <script>
 
-firebase.auth().onAuthStateChanged(user =>
-{
-  if(!user)
-  {
-    window.location.href="login.html";
-  }
+// auth protection
+firebase.auth().onAuthStateChanged(user=>{
+    if(!user){
+        window.location.href="index.html";
+    }
 });
 
-function relayOn()
-{
-  firebase.database().ref("relay").set(1);
+// relay ON
+function relayOn(){
+firebase.database().ref("relay").set(1);
+document.getElementById("status").innerText="Relay ON";
 }
 
-function relayOff()
-{
-  firebase.database().ref("relay").set(0);
+// relay OFF
+function relayOff(){
+firebase.database().ref("relay").set(0);
+document.getElementById("status").innerText="Relay OFF";
 }
 
-function logout()
-{
-  firebase.auth().signOut();
+// logout
+function logout(){
+firebase.auth().signOut();
 }
 
 </script>
