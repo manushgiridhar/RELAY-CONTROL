@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
+
 <head>
+
 <title>Relay Dashboard</title>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -10,78 +12,80 @@
 <script src="firebase-config.js"></script>
 
 <style>
+
 *{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:'Segoe UI',sans-serif;
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Segoe UI',sans-serif;
 }
 
 body{
-    background:#0f172a;
-    height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
+background:#0f172a;
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
 }
 
 .container{
-    background:#111827;
-    padding:40px;
-    border-radius:20px;
-    width:380px;
-    text-align:center;
-    box-shadow:0 10px 30px rgba(0,0,0,0.4);
-    color:white;
+background:#111827;
+padding:40px;
+border-radius:20px;
+width:400px;
+color:white;
+text-align:center;
+box-shadow:0 10px 30px rgba(0,0,0,.4);
 }
 
 h1{
-    margin-bottom:15px;
+margin-bottom:10px;
+}
+
+.user{
+margin-bottom:20px;
+color:#60a5fa;
 }
 
 .status{
-    margin:20px 0;
-    font-size:18px;
-    padding:10px;
-    border-radius:10px;
-    background:#1f2937;
+background:#1f2937;
+padding:15px;
+border-radius:12px;
+margin:20px 0;
+font-size:18px;
 }
 
 .buttons{
-    display:flex;
-    gap:15px;
-    justify-content:center;
+display:flex;
+justify-content:center;
+gap:15px;
 }
 
 button{
-    border:none;
-    padding:15px 25px;
-    border-radius:12px;
-    cursor:pointer;
-    font-size:16px;
-    transition:0.3s;
+border:none;
+padding:15px 25px;
+border-radius:12px;
+cursor:pointer;
+font-size:16px;
 }
 
 .on{
-    background:#22c55e;
-    color:white;
+background:#22c55e;
+color:white;
 }
 
 .off{
-    background:#ef4444;
-    color:white;
+background:#ef4444;
+color:white;
 }
 
 .logout{
-    margin-top:20px;
-    width:100%;
-    background:#374151;
-    color:white;
+margin-top:20px;
+width:100%;
+background:#374151;
+color:white;
 }
 
-button:hover{
-    transform:scale(1.05);
-}
 </style>
 
 </head>
@@ -92,44 +96,105 @@ button:hover{
 
 <h1>Relay Control Panel</h1>
 
-<div class="status" id="status">Relay OFF</div>
+<div id="userName" class="user"></div>
 
-<div class="buttons">
-    <button class="on" onclick="relayOn()">ON</button>
-    <button class="off" onclick="relayOff()">OFF</button>
+<div id="status" class="status">
+Relay OFF
 </div>
 
-<button class="logout" onclick="logout()">LOGOUT</button>
+<div class="buttons">
+
+<button
+class="on"
+onclick="relayOn()">
+ON
+</button>
+
+<button
+class="off"
+onclick="relayOff()">
+OFF
+</button>
+
+</div>
+
+<button
+class="logout"
+onclick="logout()">
+Logout
+</button>
 
 </div>
 
 <script>
 
-// auth protection
 firebase.auth().onAuthStateChanged(user=>{
-    if(!user){
-        window.location.href="index.html";
-    }
+
+if(!user){
+
+window.location.href="index.html";
+return;
+
+}
+
+document.getElementById("userName").innerText =
+"Welcome " +
+(user.displayName || user.email);
+
 });
 
-// relay ON
+
+firebase.database().ref("relay")
+.on("value",(snapshot)=>{
+
+if(snapshot.val()==1){
+
+document.getElementById("status").innerText =
+"Relay ON";
+
+}
+else{
+
+document.getElementById("status").innerText =
+"Relay OFF";
+
+}
+
+});
+
+
 function relayOn(){
-firebase.database().ref("relay").set(1);
-document.getElementById("status").innerText="Relay ON";
+
+firebase.database()
+.ref("relay")
+.set(1);
+
 }
 
-// relay OFF
+
 function relayOff(){
-firebase.database().ref("relay").set(0);
-document.getElementById("status").innerText="Relay OFF";
+
+firebase.database()
+.ref("relay")
+.set(0);
+
 }
 
-// logout
+
 function logout(){
-firebase.auth().signOut();
+
+firebase.auth()
+.signOut()
+.then(()=>{
+
+window.location.href="index.html";
+
+});
+
 }
 
 </script>
 
 </body>
+
 </html>
