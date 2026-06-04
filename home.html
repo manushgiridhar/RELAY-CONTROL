@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Control Center</title>
+
+<title>IoT Control Center</title>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -9,46 +10,51 @@
 
 <script src="firebase-config.js"></script>
 <link rel="stylesheet" href="style.css">
+
 </head>
 
 <body>
 
 <div class="app">
 
+<!-- SIDEBAR -->
 <div class="sidebar">
+
 <div class="logo">CONTROL CENTER</div>
 
-<div class="nav" onclick="openPage('master')">Master Unit</div>
-<div class="nav" onclick="openPage('borewell')">Borewell Unit</div>
-<div class="nav" onclick="openPage('valve')">Valve Unit</div>
-<div class="nav" onclick="openPage('well')">Well Unit</div>
-<div class="nav" onclick="logout()">Logout</div>
+<div class="nav" onclick="openPage('master')">🧠 Master Unit</div>
+<div class="nav" onclick="openPage('borewell')">🌱 Borewell Unit</div>
+<div class="nav" onclick="openPage('valve')">🚰 Valve Unit</div>
+<div class="nav" onclick="openPage('well')">💧 Well Unit</div>
+<div class="nav" onclick="logout()">🚪 Logout</div>
+
 </div>
 
+<!-- MAIN -->
 <div class="main">
 
-<h2>System Status</h2>
+<h2>Fleet Status Overview</h2>
 
 <div class="grid">
 
 <div class="card">
-<h3>Master Unit</h3>
-<p id="mStatus">Loading...</p>
+<h3>🧠 Master Control</h3>
+<p id="masterStatus">Loading...</p>
 </div>
 
 <div class="card">
-<h3>Borewell Unit</h3>
-<p id="bStatus">Loading...</p>
+<h3>🌱 Borewell Unit</h3>
+<p id="boreStatus">Loading...</p>
 </div>
 
 <div class="card">
-<h3>Valve Unit</h3>
-<p id="vStatus">Loading...</p>
+<h3>🚰 Valve Unit</h3>
+<p id="valveStatus">Loading...</p>
 </div>
 
 <div class="card">
-<h3>Well Unit</h3>
-<p id="wStatus">Loading...</p>
+<h3>💧 Well Unit</h3>
+<p id="wellStatus">Loading...</p>
 </div>
 
 </div>
@@ -59,33 +65,66 @@
 
 <script>
 
+/* ================= AUTH GUARD ================= */
 firebase.auth().onAuthStateChanged(user=>{
-if(!user) window.location.href="index.html";
+if(!user){
+window.location.href="index.html";
+}
 });
 
+/* ================= NAVIGATION ================= */
 function openPage(p){
-window.location.href=p+".html";
+window.location.href = p + ".html";
 }
 
 function logout(){
-firebase.auth().signOut().then(()=>location.href="index.html");
+firebase.auth().signOut().then(()=>{
+window.location.href="index.html";
+});
 }
 
-firebase.database().ref("nodes").on("value",snap=>{
-let d=snap.val();
+/* ================= HEARTBEAT ENGINE ================= */
+
+function isOnline(hb){
+if(!hb) return false;
+return (Date.now() - hb) < 15000; // 15 sec rule
+}
+
+/* ================= REALTIME LISTENER ================= */
+
+firebase.database().ref("nodes").on("value", snap => {
+
+let d = snap.val();
 if(!d) return;
 
-document.getElementById("mStatus").innerText =
-d.master.esp32 + " | " + d.master.lora;
+/* MASTER */
+let m = d.master || {};
+document.getElementById("masterStatus").innerText =
+isOnline(m.heartbeat)
+? "ONLINE | WiFi: " + (m.wifi || "-") + " | LoRa: " + (m.lora || "-")
+: "OFFLINE";
 
-document.getElementById("bStatus").innerText =
-d.borewell.esp32 + " | Soil:" + d.borewell.soil + "%";
+/* BOREWELL */
+let b = d.borewell || {};
+document.getElementById("boreStatus").innerText =
+isOnline(b.heartbeat)
+? "ONLINE | Soil: " + (b.soil || 0) + "% | V: " + (b.voltage || 0) + "V"
+: "OFFLINE";
 
-document.getElementById("vStatus").innerText =
-d.valve.position;
+/* VALVE */
+let v = d.valve || {};
+document.getElementById("valveStatus").innerText =
+isOnline(v.heartbeat)
+? "ONLINE | Position: " + (v.position || "-")
+: "OFFLINE";
 
-document.getElementById("wStatus").innerText =
-"Water:" + d.well.waterLevel + "%";
+/* WELL */
+let w = d.well || {};
+document.getElementById("wellStatus").innerText =
+isOnline(w.heartbeat)
+? "ONLINE | Water Level: " + (w.waterLevel || 0) + "%"
+: "OFFLINE";
+
 });
 
 </script>
