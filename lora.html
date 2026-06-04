@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>LoRa Messaging</title>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="firebase-config.js"></script>
+
+<style>
+
+body{
+margin:0;
+font-family:Segoe UI;
+background:#020617;
+color:white;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+.box{
+width:400px;
+background:rgba(255,255,255,0.08);
+padding:30px;
+border-radius:20px;
+}
+
+input{
+width:100%;
+padding:12px;
+border-radius:10px;
+border:none;
+margin:10px 0;
+}
+
+button{
+width:100%;
+padding:12px;
+border:none;
+border-radius:10px;
+background:#3b82f6;
+color:white;
+}
+
+.chat{
+margin-top:20px;
+height:200px;
+overflow:auto;
+background:#111827;
+padding:10px;
+border-radius:10px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="box">
+
+<h2>LoRa Chat System</h2>
+
+<input id="msg" placeholder="Send message">
+
+<button onclick="send()">Send</button>
+
+<div class="chat" id="chat"></div>
+
+</div>
+
+<script>
+
+function send(){
+let msg=document.getElementById("msg").value;
+
+firebase.database().ref("lora").set({
+text:msg,
+time:Date.now()
+});
+}
+
+firebase.database().ref("lora")
+.on("value",snap=>{
+let data=snap.val();
+if(data){
+document.getElementById("chat").innerHTML +=
+"<div>➡ " + data.text + "</div>";
+}
+});
+
+</script>
+
+</body>
+</html>

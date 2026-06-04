@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Select Mode</title>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+<script src="firebase-config.js"></script>
+
+<style>
+
+body{
+margin:0;
+font-family:Segoe UI;
+background:radial-gradient(circle,#0f172a,#020617);
+color:white;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+.container{
+text-align:center;
+}
+
+.card{
+display:inline-block;
+width:220px;
+padding:30px;
+margin:20px;
+background:rgba(255,255,255,0.08);
+border-radius:20px;
+cursor:pointer;
+transition:0.3s;
+}
+
+.card:hover{
+transform:scale(1.08);
+background:rgba(255,255,255,0.15);
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Select System Mode</h1>
+
+<div class="card" onclick="goRelay()">
+<h2>Relay Control</h2>
+<p>ON / OFF Devices</p>
+</div>
+
+<div class="card" onclick="goLora()">
+<h2>LoRa Chat</h2>
+<p>Device Messaging System</p>
+</div>
+
+</div>
+
+<script>
+
+firebase.auth().onAuthStateChanged(user=>{
+if(!user){
+window.location.href="index.html";
+}
+});
+
+function goRelay(){
+window.location.href="relay.html";
+}
+
+function goLora(){
+window.location.href="lora.html";
+}
+
+</script>
+
+</body>
+</html>
