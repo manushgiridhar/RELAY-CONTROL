@@ -19,12 +19,10 @@
 <div class="sidebar">
 <div class="logo">🧠 MASTER NODE</div>
 
-<div class="nav" onclick="back()">← Back to Control Center</div>
-
-<div class="nav" onclick="syncAll()">🔄 Sync All Units</div>
-<div class="nav" onclick="runDiagnostics()">🧪 Run Diagnostics</div>
+<div class="nav" onclick="back()">← Control Center</div>
+<div class="nav" onclick="syncAll()">🔄 Sync Nodes</div>
+<div class="nav" onclick="runDiagnostics()">🧪 Diagnostics</div>
 <div class="nav" onclick="logout()">🚪 Logout</div>
-
 </div>
 
 <!-- MAIN -->
@@ -32,7 +30,7 @@
 
 <h2>Master Control Dashboard</h2>
 
-<!-- SYSTEM STATUS GRID -->
+<!-- STATUS GRID -->
 <div class="grid">
 
 <div class="card">
@@ -46,25 +44,39 @@
 </div>
 
 <div class="card">
-<h3>System Health Index</h3>
+<h3>System Health</h3>
 <p id="health">Calculating...</p>
 </div>
 
 <div class="card">
-<h3>Node Connectivity</h3>
-<p id="nodes">Checking all nodes...</p>
+<h3>Node Status</h3>
+<p id="nodes">Checking...</p>
 </div>
+
+</div>
+
+<!-- ================= NEW FEATURE: RELAY CONTROL ================= -->
+<div class="card" style="margin-top:20px">
+
+<h3>⚡ Relay Control System</h3>
+
+<p>Direct actuator control via cloud command bus</p>
+
+<button class="success" onclick="relayOn()">RELAY ON</button>
+<button class="danger" onclick="relayOff()">RELAY OFF</button>
+
+<p id="relayStatus" style="margin-top:10px;">Status: Unknown</p>
 
 </div>
 
 <!-- CONTROL PANEL -->
 <div class="card" style="margin-top:20px">
 
-<h3>Control Actions</h3>
+<h3>System Actions</h3>
 
-<button class="primary" onclick="syncAll()">Force Sync Nodes</button>
+<button class="primary" onclick="syncAll()">Force Sync</button>
 <button class="success" onclick="runDiagnostics()">Run Health Check</button>
-<button class="danger" onclick="resetSystem()">Reset System State</button>
+<button class="danger" onclick="resetSystem()">Reset System</button>
 
 </div>
 
@@ -74,7 +86,7 @@
 
 <script>
 
-/* ================= AUTH GUARD ================= */
+/* ================= AUTH ================= */
 firebase.auth().onAuthStateChanged(user=>{
 if(!user){
 window.location.href="index.html";
@@ -92,69 +104,94 @@ window.location.href="index.html";
 });
 }
 
-/* ================= ACTIONS ================= */
+/* ================= RELAY CONTROL (NEW FEATURE) ================= */
+
+function relayOn(){
+firebase.database().ref("/relay/command").set(1);
+document.getElementById("relayStatus").innerText = "Status: ON command sent";
+}
+
+function relayOff(){
+firebase.database().ref("/relay/command").set(0);
+document.getElementById("relayStatus").innerText = "Status: OFF command sent";
+}
+
+/* ================= SYSTEM COMMANDS ================= */
 
 function syncAll(){
 firebase.database().ref("control/sync").set({
 status:"requested",
-timestamp:Date.now()
+time:Date.now()
 });
-alert("Sync command dispatched to all nodes");
+alert("Sync triggered");
 }
 
 function runDiagnostics(){
 firebase.database().ref("control/diagnostics").set({
 status:"running",
-timestamp:Date.now()
+time:Date.now()
 });
-alert("Diagnostics initiated");
+alert("Diagnostics running");
 }
 
 function resetSystem(){
 firebase.database().ref("control/reset").set({
 status:"triggered",
-timestamp:Date.now()
+time:Date.now()
 });
-alert("System reset command sent");
+alert("System reset sent");
 }
 
 /* ================= REALTIME MONITORING ================= */
+
+function isOnline(hb){
+if(!hb) return false;
+return (Date.now() - hb) < 15000;
+}
+
 firebase.database().ref("nodes").on("value",snap=>{
 
 let d = snap.val();
 if(!d) return;
 
-/* ESP STATUS */
+/* ESP */
 document.getElementById("espStatus").innerText =
-d.master?.esp32 === "online"
-? "ONLINE - Gateway Active"
-: "OFFLINE - No heartbeat";
+isOnline(d.master?.heartbeat) ? "ONLINE" : "OFFLINE";
 
-/* LORA STATUS */
+/* LORA */
 document.getElementById("loraStatus").innerText =
-d.master?.lora === "ready"
-? "READY - Communication Stable"
-: "FAULT - Link degraded";
+(d.master?.lora === "ready") ? "READY" : "FAULT";
 
-/* HEALTH INDEX (simple logic now, upgrade later) */
+/* HEALTH */
 let score = 0;
-
-if(d.master?.esp32 === "online") score += 25;
-if(d.master?.lora === "ready") score += 25;
-if(d.borewell?.esp32 === "online") score += 20;
-if(d.valve?.esp32 === "online") score += 15;
-if(d.well?.esp32 === "online") score += 15;
+if(isOnline(d.master?.heartbeat)) score += 30;
+if(isOnline(d.borewell?.heartbeat)) score += 25;
+if(isOnline(d.valve?.heartbeat)) score += 25;
+if(isOnline(d.well?.heartbeat)) score += 20;
 
 document.getElementById("health").innerText =
-score + " / 100 (System Stability Index)";
+score + "/100 SYSTEM HEALTH";
 
 /* NODE SUMMARY */
 document.getElementById("nodes").innerText =
-"Master: " + (d.master?.esp32 || "unknown") +
-" | Borewell: " + (d.borewell?.esp32 || "unknown") +
-" | Valve: " + (d.valve?.esp32 || "unknown") +
-" | Well: " + (d.well?.esp32 || "unknown");
+"Master: " + (d.master?.esp32 || "NA") +
+" | Borewell: " + (d.borewell?.esp32 || "NA") +
+" | Valve: " + (d.valve?.esp32 || "NA") +
+" | Well: " + (d.well?.esp32 || "NA");
 
+});
+
+/* ================= RELAY FEEDBACK ================= */
+
+firebase.database().ref("/relay/command").on("value",snap=>{
+let v = snap.val();
+
+if(v === 1){
+document.getElementById("relayStatus").innerText = "STATUS: ON (ACTIVE)";
+}
+else{
+document.getElementById("relayStatus").innerText = "STATUS: OFF";
+}
 });
 
 </script>

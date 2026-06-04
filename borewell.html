@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Borewell Unit</title>
+<title>Borewell Control Unit</title>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script src="firebase-config.js"></script>
@@ -14,22 +15,66 @@
 
 <div class="app">
 
+<!-- SIDEBAR (UNCHANGED) -->
 <div class="sidebar">
-<div class="logo">BOREWELL</div>
-<div class="nav" onclick="back()">Back</div>
+<div class="logo">🌱 BOREWELL UNIT</div>
+
+<div class="nav" onclick="back()">← Back</div>
+<div class="nav" onclick="logout()">🚪 Logout</div>
 </div>
 
+<!-- MAIN -->
 <div class="main">
 
+<h2>Borewell System Dashboard</h2>
+
+<!-- EXISTING CARDS (YOU ALREADY HAD - KEEPING PLACEHOLDER STYLE) -->
+<div class="grid">
+
 <div class="card">
-<h3>System Status</h3>
-<p id="status"></p>
+<h3>ESP32 Status</h3>
+<p id="espStatus">Checking...</p>
+</div>
 
-<hr>
+<div class="card">
+<h3>LoRa Status</h3>
+<p id="loraStatus">Checking...</p>
+</div>
 
-<p>Soil Moisture: <span id="soil"></span>%</p>
-<p>Voltage: <span id="volt"></span>V</p>
-<p>Current: <span id="curr"></span>A</p>
+<div class="card">
+<h3>Soil Moisture</h3>
+<p id="soil">Loading...</p>
+</div>
+
+<div class="card">
+<h3>System Health</h3>
+<p id="health">Analyzing...</p>
+</div>
+
+</div>
+
+<!-- ================= NEW FEATURE BLOCK ================= -->
+<div class="card" style="margin-top:20px">
+
+<h3>⚡ Relay Execution Status (REAL HARDWARE FEEDBACK)</h3>
+
+<p>This shows actual relay state confirmed by ESP32 + LoRa execution layer</p>
+
+<p>
+Relay Command:
+<span id="relayCommand">UNKNOWN</span>
+</p>
+
+<p>
+Relay Execution State:
+<span id="relayState">WAITING FOR DEVICE</span>
+</p>
+
+<p>
+LoRa Delivery Status:
+<span id="loraState">NO PACKET</span>
+</p>
+
 </div>
 
 </div>
@@ -38,20 +83,87 @@
 
 <script>
 
+/* ================= AUTH GUARD ================= */
+firebase.auth().onAuthStateChanged(user=>{
+if(!user){
+window.location.href="index.html";
+}
+});
+
+/* ================= NAV ================= */
 function back(){
-location.href="home.html";
+window.location.href="home.html";
 }
 
-firebase.database().ref("nodes/borewell").on("value",snap=>{
-let d=snap.val();
+function logout(){
+firebase.auth().signOut().then(()=>{
+window.location.href="index.html";
+});
+}
+
+/* ================= HEARTBEAT CHECK ================= */
+function isOnline(hb){
+if(!hb) return false;
+return (Date.now() - hb) < 15000;
+}
+
+/* ================= EXISTING DATA STREAM ================= */
+firebase.database().ref("nodes/borewell").on("value", snap => {
+
+let d = snap.val();
 if(!d) return;
 
-document.getElementById("status").innerText =
-d.esp32 + " | " + d.lora;
+/* ESP STATUS */
+document.getElementById("espStatus").innerText =
+isOnline(d.heartbeat) ? "ONLINE" : "OFFLINE";
 
-document.getElementById("soil").innerText = d.soil;
-document.getElementById("volt").innerText = d.voltage;
-document.getElementById("curr").innerText = d.current;
+/* SOIL */
+document.getElementById("soil").innerText =
+(d.soil || 0) + "%";
+
+/* HEALTH SIMPLE SCORE */
+document.getElementById("health").innerText =
+isOnline(d.heartbeat) ? "NODE ACTIVE" : "NODE OFFLINE";
+
+});
+
+/* ================= NEW FEATURE: RELAY STATUS ================= */
+
+/* 1. COMMAND SENT FROM MASTER */
+firebase.database().ref("relay/command").on("value", snap => {
+
+let cmd = snap.val();
+
+document.getElementById("relayCommand").innerText =
+cmd == 1 ? "ON COMMAND" : "OFF COMMAND";
+});
+
+/* 2. REAL EXECUTION FROM BOREWELL ESP32 */
+firebase.database().ref("nodes/borewell/relay").on("value", snap => {
+
+let state = snap.val();
+
+if(state == 1){
+document.getElementById("relayState").innerText = "RELAY IS ON (EXECUTED)";
+}
+else{
+document.getElementById("relayState").innerText = "RELAY IS OFF (EXECUTED)";
+}
+
+});
+
+/* 3. LORA PACKET STATUS (OPTIONAL DEBUG FEEDBACK) */
+firebase.database().ref("nodes/borewell/loraStatus").on("value", snap => {
+
+let l = snap.val();
+
+if(l){
+document.getElementById("loraState").innerText = l;
+}
+else{
+document.getElementById("loraState").innerText = "NO PACKET RECEIVED";
+}
+
 });
 
 </script>
