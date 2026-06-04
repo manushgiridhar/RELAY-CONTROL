@@ -1,138 +1,94 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-
 *{
 margin:0;
 padding:0;
 box-sizing:border-box;
-font-family:'Inter',sans-serif;
+font-family:Inter,sans-serif;
 }
 
 body{
-background:
-radial-gradient(circle at 20% 20%, #0ea5e9, transparent 40%),
-radial-gradient(circle at 80% 30%, #8b5cf6, transparent 40%),
-radial-gradient(circle at 50% 80%, #22c55e, transparent 40%),
-#020617;
-color:white;
-min-height:100vh;
+background:#f5f1e6;
+color:#111;
 }
 
-/* ===== APP LAYOUT ===== */
+/* LAYOUT */
 .app{
 display:flex;
 height:100vh;
 }
 
-/* ===== SIDEBAR ===== */
+/* SIDEBAR */
 .sidebar{
-width:240px;
-background:rgba(255,255,255,0.05);
-backdrop-filter:blur(18px);
-border-right:1px solid rgba(255,255,255,0.1);
+width:260px;
+background:#0b0b0b;
+color:#f5f1e6;
 padding:20px;
 display:flex;
 flex-direction:column;
-gap:15px;
+gap:12px;
 }
 
 .logo{
-font-size:18px;
 font-weight:700;
 margin-bottom:20px;
-color:#38bdf8;
 }
 
+/* NAV */
 .nav{
 padding:12px;
+border:1px solid rgba(255,255,255,0.1);
 border-radius:10px;
 cursor:pointer;
-transition:0.3s;
-background:transparent;
+transition:0.2s;
 }
 
 .nav:hover{
-background:rgba(255,255,255,0.08);
-transform:translateX(5px);
+background:#f5f1e6;
+color:#0b0b0b;
 }
 
-/* ===== MAIN ===== */
+/* MAIN */
 .main{
 flex:1;
 padding:25px;
-overflow:auto;
 }
 
-/* ===== GLASS CARD ===== */
+/* CARD */
 .card{
-background:rgba(255,255,255,0.06);
-backdrop-filter:blur(18px);
-border:1px solid rgba(255,255,255,0.1);
-border-radius:18px;
-padding:20px;
-transition:0.3s;
+background:#fff;
+padding:18px;
+border-radius:12px;
+border:1px solid #e6dcc7;
+margin-bottom:15px;
 }
 
-.card:hover{
-transform:translateY(-5px);
-}
-
-/* ===== GRID ===== */
+/* GRID */
 .grid{
 display:grid;
 grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-gap:20px;
+gap:15px;
 }
 
-/* ===== BUTTONS ===== */
-button{
-padding:12px 16px;
-border:none;
-border-radius:10px;
-cursor:pointer;
-font-weight:600;
-transition:0.3s;
-}
-
-button:hover{
-transform:scale(1.05);
-}
-
-/* ===== RELAY BUTTONS ===== */
-.on{
-background:linear-gradient(135deg,#22c55e,#16a34a);
-color:black;
-}
-
-.off{
-background:linear-gradient(135deg,#ef4444,#b91c1c);
-color:white;
-}
-
-/* ===== STATUS DOT ===== */
+/* STATUS DOT */
 .dot{
 width:10px;
 height:10px;
 border-radius:50%;
 display:inline-block;
-margin-right:8px;
+margin-right:6px;
 }
 
-.green{background:#22c55e;}
-.red{background:#ef4444;}
-.blue{background:#38bdf8;}
+.green{background:#16a34a;}
+.red{background:#dc2626;}
+.amber{background:#f59e0b;}
 
-/* ===== CHAT ===== */
-.chat{
-height:300px;
-overflow:auto;
-padding:10px;
-background:rgba(0,0,0,0.4);
-border-radius:12px;
-}
-
-.msg{
-padding:8px;
-margin:6px 0;
-background:rgba(255,255,255,0.08);
+/* BUTTONS */
+button{
+padding:10px 14px;
+border:none;
 border-radius:10px;
+cursor:pointer;
 }
+
+.primary{background:#111;color:#fff;}
+.success{background:#16a34a;color:#fff;}
+.danger{background:#dc2626;color:#fff;}

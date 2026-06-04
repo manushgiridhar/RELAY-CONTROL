@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Master Control Unit</title>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script src="firebase-config.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+<div class="logo">🧠 MASTER NODE</div>
+
+<div class="nav" onclick="back()">← Back to Control Center</div>
+
+<div class="nav" onclick="syncAll()">🔄 Sync All Units</div>
+<div class="nav" onclick="runDiagnostics()">🧪 Run Diagnostics</div>
+<div class="nav" onclick="logout()">🚪 Logout</div>
+
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<h2>Master Control Dashboard</h2>
+
+<!-- SYSTEM STATUS GRID -->
+<div class="grid">
+
+<div class="card">
+<h3>ESP32 Gateway</h3>
+<p id="espStatus">Checking...</p>
+</div>
+
+<div class="card">
+<h3>LoRa Network</h3>
+<p id="loraStatus">Checking...</p>
+</div>
+
+<div class="card">
+<h3>System Health Index</h3>
+<p id="health">Calculating...</p>
+</div>
+
+<div class="card">
+<h3>Node Connectivity</h3>
+<p id="nodes">Checking all nodes...</p>
+</div>
+
+</div>
+
+<!-- CONTROL PANEL -->
+<div class="card" style="margin-top:20px">
+
+<h3>Control Actions</h3>
+
+<button class="primary" onclick="syncAll()">Force Sync Nodes</button>
+<button class="success" onclick="runDiagnostics()">Run Health Check</button>
+<button class="danger" onclick="resetSystem()">Reset System State</button>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+/* ================= AUTH GUARD ================= */
+firebase.auth().onAuthStateChanged(user=>{
+if(!user){
+window.location.href="index.html";
+}
+});
+
+/* ================= NAV ================= */
+function back(){
+window.location.href="home.html";
+}
+
+function logout(){
+firebase.auth().signOut().then(()=>{
+window.location.href="index.html";
+});
+}
+
+/* ================= ACTIONS ================= */
+
+function syncAll(){
+firebase.database().ref("control/sync").set({
+status:"requested",
+timestamp:Date.now()
+});
+alert("Sync command dispatched to all nodes");
+}
+
+function runDiagnostics(){
+firebase.database().ref("control/diagnostics").set({
+status:"running",
+timestamp:Date.now()
+});
+alert("Diagnostics initiated");
+}
+
+function resetSystem(){
+firebase.database().ref("control/reset").set({
+status:"triggered",
+timestamp:Date.now()
+});
+alert("System reset command sent");
+}
+
+/* ================= REALTIME MONITORING ================= */
+firebase.database().ref("nodes").on("value",snap=>{
+
+let d = snap.val();
+if(!d) return;
+
+/* ESP STATUS */
+document.getElementById("espStatus").innerText =
+d.master?.esp32 === "online"
+? "ONLINE - Gateway Active"
+: "OFFLINE - No heartbeat";
+
+/* LORA STATUS */
+document.getElementById("loraStatus").innerText =
+d.master?.lora === "ready"
+? "READY - Communication Stable"
+: "FAULT - Link degraded";
+
+/* HEALTH INDEX (simple logic now, upgrade later) */
+let score = 0;
+
+if(d.master?.esp32 === "online") score += 25;
+if(d.master?.lora === "ready") score += 25;
+if(d.borewell?.esp32 === "online") score += 20;
+if(d.valve?.esp32 === "online") score += 15;
+if(d.well?.esp32 === "online") score += 15;
+
+document.getElementById("health").innerText =
+score + " / 100 (System Stability Index)";
+
+/* NODE SUMMARY */
+document.getElementById("nodes").innerText =
+"Master: " + (d.master?.esp32 || "unknown") +
+" | Borewell: " + (d.borewell?.esp32 || "unknown") +
+" | Valve: " + (d.valve?.esp32 || "unknown") +
+" | Well: " + (d.well?.esp32 || "unknown");
+
+});
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Borewell Unit</title>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script src="firebase-config.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+<div class="sidebar">
+<div class="logo">BOREWELL</div>
+<div class="nav" onclick="back()">Back</div>
+</div>
+
+<div class="main">
+
+<div class="card">
+<h3>System Status</h3>
+<p id="status"></p>
+
+<hr>
+
+<p>Soil Moisture: <span id="soil"></span>%</p>
+<p>Voltage: <span id="volt"></span>V</p>
+<p>Current: <span id="curr"></span>A</p>
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+function back(){
+location.href="home.html";
+}
+
+firebase.database().ref("nodes/borewell").on("value",snap=>{
+let d=snap.val();
+if(!d) return;
+
+document.getElementById("status").innerText =
+d.esp32 + " | " + d.lora;
+
+document.getElementById("soil").innerText = d.soil;
+document.getElementById("volt").innerText = d.voltage;
+document.getElementById("curr").innerText = d.current;
+});
+
+</script>
+
+</body>
+</html>

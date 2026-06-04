@@ -1,42 +1,57 @@
-function login(){
+// ================= AUTH CORE =================
 
-let email=document.getElementById("email").value;
-let password=document.getElementById("password").value;
-
-firebase.auth()
-.signInWithEmailAndPassword(email,password)
-.then(()=>{
-window.location.href="home.html";
-})
-.catch(err=>{
-alert(err.message);
-});
-
+function redirectHome(){
+window.location.href = "home.html";
 }
 
-function googleLogin(){
-const provider=new firebase.auth.GoogleAuthProvider();
+function handleError(err){
+console.error("AUTH ERROR:", err.code, err.message);
+alert(err.message);
+}
+
+// ================= EMAIL LOGIN =================
+
+function login(){
+
+let email = document.getElementById("email").value;
+let password = document.getElementById("password").value;
 
 firebase.auth()
+.signInWithEmailAndPassword(email, password)
+.then(redirectHome)
+.catch(handleError);
+}
+
+// ================= OAUTH FACTORY =================
+
+function socialLogin(provider){
+firebase.auth()
 .signInWithPopup(provider)
-.then(()=>window.location.href="home.html")
-.catch(e=>alert(e.message));
+.then(redirectHome)
+.catch(handleError);
+}
+
+// ================= PROVIDERS =================
+
+function googleLogin(){
+const provider = new firebase.auth.GoogleAuthProvider();
+socialLogin(provider);
 }
 
 function githubLogin(){
-const provider=new firebase.auth.GithubAuthProvider();
-
-firebase.auth()
-.signInWithPopup(provider)
-.then(()=>window.location.href="home.html")
-.catch(e=>alert(e.message));
+const provider = new firebase.auth.GithubAuthProvider();
+socialLogin(provider);
 }
 
 function facebookLogin(){
-const provider=new firebase.auth.FacebookAuthProvider();
-
-firebase.auth()
-.signInWithPopup(provider)
-.then(()=>window.location.href="home.html")
-.catch(e=>alert(e.message));
+const provider = new firebase.auth.FacebookAuthProvider();
+socialLogin(provider);
 }
+
+// ================= SESSION WATCHER =================
+
+firebase.auth().onAuthStateChanged(user=>{
+if(user){
+console.log("AUTH SESSION ACTIVE:", user.email);
+}
+});

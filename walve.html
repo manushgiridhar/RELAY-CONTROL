@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Valve Unit</title>
+
+<script src="firebase-config.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+<div class="sidebar">
+<div class="logo">VALVE</div>
+<div class="nav" onclick="back()">Back</div>
+</div>
+
+<div class="main">
+
+<div class="card">
+<h3>Valve Status</h3>
+<p id="status"></p>
+
+<button class="success" onclick="openValve()">OPEN</button>
+<button class="danger" onclick="closeValve()">CLOSE</button>
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+function back(){
+location.href="home.html";
+}
+
+function openValve(){
+firebase.database().ref("nodes/valve/position").set("open");
+}
+
+function closeValve(){
+firebase.database().ref("nodes/valve/position").set("closed");
+}
+
+firebase.database().ref("nodes/valve").on("value",snap=>{
+let d=snap.val();
+document.getElementById("status").innerText =
+d.esp32 + " | " + d.lora + " | " + d.position;
+});
+
+</script>
+
+</body>
+</html>

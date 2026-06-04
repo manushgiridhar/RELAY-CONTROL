@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Well Unit</title>
+
+<script src="firebase-config.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+<div class="sidebar">
+<div class="logo">WELL</div>
+<div class="nav" onclick="back()">Back</div>
+</div>
+
+<div class="main">
+
+<div class="card">
+<h3>Water Level System</h3>
+
+<p id="status"></p>
+<p>Water Level: <span id="level"></span>%</p>
+
+<button class="primary" onclick="pumpOn()">Pump ON</button>
+<button class="danger" onclick="pumpOff()">Pump OFF</button>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+function back(){
+location.href="home.html";
+}
+
+function pumpOn(){
+firebase.database().ref("nodes/well/pump").set(1);
+}
+
+function pumpOff(){
+firebase.database().ref("nodes/well/pump").set(0);
+}
+
+firebase.database().ref("nodes/well").on("value",snap=>{
+let d=snap.val();
+
+document.getElementById("status").innerText =
+d.esp32 + " | " + d.lora;
+
+document.getElementById("level").innerText =
+d.waterLevel;
+});
+
+</script>
+
+</body>
+</html>

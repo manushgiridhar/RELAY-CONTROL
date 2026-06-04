@@ -24,6 +24,7 @@ radial-gradient(circle at top,#1e3a8a,#0f172a);
 color:white;
 }
 
+/* LOGIN CARD */
 .login-box{
 width:380px;
 padding:30px;
@@ -39,6 +40,7 @@ h2{
 margin-bottom:20px;
 }
 
+/* INPUTS */
 input{
 width:100%;
 padding:12px;
@@ -54,6 +56,7 @@ input:focus{
 background:rgba(255,255,255,0.15);
 }
 
+/* BUTTON BASE */
 .btn{
 width:100%;
 padding:12px;
@@ -62,7 +65,7 @@ border:none;
 border-radius:10px;
 cursor:pointer;
 font-weight:bold;
-transition:0.3s;
+transition:0.25s;
 }
 
 .btn:hover{
@@ -70,7 +73,7 @@ transform:scale(1.03);
 box-shadow:0 0 15px rgba(255,255,255,0.1);
 }
 
-/* EMAIL LOGIN */
+/* EMAIL */
 .email{
 background:linear-gradient(135deg,#22c55e,#16a34a);
 color:black;
@@ -106,10 +109,18 @@ justify-content:center;
 gap:10px;
 }
 
-/* ICONS */
+/* ICON */
 .icon{
 width:18px;
 height:18px;
+}
+
+/* LOADING STATE (NEW ADDITION) */
+#loading{
+margin-top:10px;
+font-size:13px;
+opacity:0.7;
+display:none;
 }
 
 </style>
@@ -147,13 +158,21 @@ Continue with GitHub
 Continue with Facebook
 </button>
 
+<div id="loading">Authenticating system access...</div>
+
 </div>
 
 <script>
 
+/* ================= SYSTEM GATE (PREVENT FLASH) ================= */
+document.getElementById("loading").style.display = "block";
+
+/* AUTH STATE HANDLER */
 firebase.auth().onAuthStateChanged(user=>{
 if(user){
 window.location.href="home.html";
+}else{
+document.getElementById("loading").style.display = "none";
 }
 });
 
