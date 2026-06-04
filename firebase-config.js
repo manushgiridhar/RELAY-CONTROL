@@ -1,11 +1,11 @@
 const firebaseConfig = {
-  apiKey: "AIzaSyAk73o8I4__5ur5mJUMk6IOmm-vcPMu9i8",
-  authDomain: "gardening-eeeea.firebaseapp.com",
-  databaseURL: "https://gardening-eeeea-default-rtdb.firebaseio.com",
-  projectId: "gardening-eeeea",
-  storageBucket: "gardening-eeeea.firebasestorage.app",
-  messagingSenderId: "168092779685",
-  appId: "1:168092779685:web:526c592b319f52a9b2394c"
+  apiKey: "AIzaSyBF-bnOqs-rX4-PjlVM_6ligsYKPC9IEX0",
+  authDomain: "esp-relay-control-6488c.firebaseapp.com",
+  databaseURL: "https://esp-relay-control-6488c-default-rtdb.firebaseio.com",
+  projectId: "esp-relay-control-6488c",
+  storageBucket: "esp-relay-control-6488c.firebasestorage.app",
+  messagingSenderId: "418928329926",
+  appId: "1:418928329926:web:77dd4b66be9b8d22ea03c7"
 };
 
 firebase.initializeApp(firebaseConfig);
