@@ -1,110 +1,123 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>IoT Control Dashboard</title>
+<title>IoT Dashboard</title>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script src="firebase-config.js"></script>
 
 <style>
 
+/* ================= THEME ================= */
 body{
 margin:0;
 font-family:Segoe UI;
-background:#f5f1e8;
-color:#2f2f2f;
+background:#f3ead7; /* beige */
+color:#111;
+}
+
+/* ================= LAYOUT ================= */
+.app{
 display:flex;
-justify-content:center;
-align-items:center;
 height:100vh;
 }
 
-/* MAIN CONTAINER */
-.panel{
-width:420px;
-background:white;
-border-radius:16px;
-padding:25px;
-box-shadow:0 10px 30px rgba(0,0,0,0.08);
+/* ================= SIDEBAR ================= */
+.sidebar{
+width:240px;
+background:#111;
+color:#f3ead7;
+display:flex;
+flex-direction:column;
+padding:20px;
 }
 
-/* HEADER */
+.logo{
+font-size:18px;
+font-weight:bold;
+margin-bottom:30px;
+letter-spacing:1px;
+}
+
+.nav{
+padding:12px;
+margin:6px 0;
+border-radius:8px;
+cursor:pointer;
+transition:0.2s;
+background:transparent;
+border:1px solid rgba(243,234,215,0.15);
+}
+
+.nav:hover{
+background:#f3ead7;
+color:#111;
+}
+
+/* ================= MAIN ================= */
+.main{
+flex:1;
+padding:30px;
+}
+
+/* ================= TITLE ================= */
 h2{
 margin-bottom:20px;
-color:#2f2f2f;
 }
 
-/* STATUS CARDS */
+/* ================= GRID ================= */
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:20px;
+}
+
+/* ================= CARD ================= */
 .card{
-background:#faf7f0;
-border:1px solid #e7e0d5;
-padding:15px;
+background:#fff;
+padding:18px;
 border-radius:12px;
-margin:10px 0;
-display:flex;
-justify-content:space-between;
-align-items:center;
-}
-
-/* LABEL */
-.label{
-font-size:14px;
-color:#444;
-}
-
-/* STATUS DOT */
-.dot{
-width:10px;
-height:10px;
-border-radius:50%;
-background:#b5b5b5;
-}
-
-/* ACTIVE */
-.green{
-background:#2e7d32 !important;
-}
-
-/* BUTTONS */
-button{
-width:100%;
-padding:12px;
-margin-top:15px;
-border:none;
-border-radius:10px;
-cursor:pointer;
-font-weight:600;
+border:1px solid #e6dcc7;
+box-shadow:0 5px 15px rgba(0,0,0,0.05);
 transition:0.2s;
 }
 
-button:hover{
-transform:scale(1.02);
+.card:hover{
+transform:translateY(-3px);
 }
 
-/* RELAY BUTTONS */
-.on{
-background:#2e7d32;
-color:white;
+/* ================= STATUS DOTS ================= */
+.dot{
+display:inline-block;
+width:10px;
+height:10px;
+border-radius:50%;
+margin-right:8px;
 }
 
-.off{
-background:#c62828;
-color:white;
+.green{background:#2e7d32;}
+.black{background:#111;}
+.gray{background:#999;}
+
+/* ================= TEXT ================= */
+.card h3{
+margin:0;
+font-size:16px;
+display:flex;
+align-items:center;
 }
 
-/* LOGOUT */
-.logout{
-background:#8d8d8d;
-color:white;
+.card p{
+margin-top:8px;
+font-size:13px;
+color:#444;
 }
 
-/* STATUS TEXT */
-.small{
-font-size:12px;
-color:#666;
+/* ================= SMALL UX ================= */
+.sidebar .nav:first-of-type{
+margin-top:10px;
 }
 
 </style>
@@ -113,104 +126,112 @@ color:#666;
 
 <body>
 
-<div class="panel">
+<div class="app">
 
-<h2>IoT System Dashboard</h2>
+<!-- SIDEBAR -->
+<div class="sidebar">
 
-<div class="small" id="user">Loading user...</div>
+<div class="logo">⚡ IoT CONTROL</div>
+
+<div class="nav" onclick="openRelay()">🔌 Relay Control</div>
+<div class="nav" onclick="openLora()">📡 LoRa Terminal</div>
+<div class="nav" onclick="logout()">🚪 Logout</div>
+
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<h2>System Overview</h2>
+
+<div class="grid">
 
 <!-- FIREBASE -->
 <div class="card">
-<div class="label">Firebase Connection</div>
-<div class="dot green" id="firebaseDot"></div>
+<h3><span class="dot green"></span>Firebase Cloud</h3>
+<p>Realtime database connected</p>
 </div>
 
 <!-- ESP32 -->
 <div class="card">
-<div class="label">ESP32 Device</div>
-<div class="dot" id="espDot"></div>
+<h3><span class="dot gray" id="espDot"></span>ESP32 Node</h3>
+<p id="espStatus">Checking device status...</p>
 </div>
 
 <!-- LORA -->
 <div class="card">
-<div class="label">LoRa Module</div>
-<div class="dot" id="loraDot"></div>
+<h3><span class="dot gray" id="loraDot"></span>LoRa Network</h3>
+<p id="loraStatus">Waiting for bridge...</p>
 </div>
 
-<!-- RELAY STATUS -->
+<!-- SECURITY -->
 <div class="card">
-<div class="label">Relay State</div>
-<div id="relayState">UNKNOWN</div>
+<h3><span class="dot black"></span>Security Layer</h3>
+<p>Firebase Auth enabled</p>
 </div>
 
-<button class="on" onclick="relayOn()">TURN ON</button>
-<button class="off" onclick="relayOff()">TURN OFF</button>
+</div>
 
-<button class="logout" onclick="logout()">LOGOUT</button>
+</div>
 
 </div>
 
 <script>
 
+/* ================= AUTH GUARD ================= */
 firebase.auth().onAuthStateChanged(user=>{
 if(!user){
 window.location.href="index.html";
-return;
 }
-document.getElementById("user").innerText =
-"Logged in as: " + (user.displayName || user.email);
 });
 
-// FIREBASE ALWAYS ONLINE (if page loads)
-document.getElementById("firebaseDot").classList.add("green");
+/* ================= NAV ================= */
+function openRelay(){
+window.location.href="relay.html";
+}
 
-// ESP + LORA STATUS LISTENER
+function openLora(){
+window.location.href="lora.html";
+}
+
+function logout(){
+firebase.auth().signOut().then(()=>{
+window.location.href="index.html";
+});
+}
+
+/* ================= DEVICE STATUS (FIREBASE REALTIME) ================= */
 firebase.database().ref("system").on("value",snap=>{
 
 let data = snap.val();
 
 if(!data){
-document.getElementById("espDot").classList.remove("green");
-document.getElementById("loraDot").classList.remove("green");
 return;
 }
 
-// ESP STATUS
+/* ESP32 STATUS */
 if(data.esp32 === "online"){
 document.getElementById("espDot").classList.add("green");
+document.getElementById("espStatus").innerText =
+"ESP32 is active and sending heartbeat";
 }else{
 document.getElementById("espDot").classList.remove("green");
+document.getElementById("espStatus").innerText =
+"ESP32 offline or not responding";
 }
 
-// LORA STATUS
+/* LORA STATUS */
 if(data.lora === "ready"){
 document.getElementById("loraDot").classList.add("green");
+document.getElementById("loraStatus").innerText =
+"LoRa module ready for transmission";
 }else{
 document.getElementById("loraDot").classList.remove("green");
+document.getElementById("loraStatus").innerText =
+"LoRa not initialized";
 }
 
 });
-
-// RELAY LISTENER
-firebase.database().ref("relay").on("value",snap=>{
-document.getElementById("relayState").innerText =
-snap.val() == 1 ? "ON" : "OFF";
-});
-
-// RELAY CONTROL
-function relayOn(){
-firebase.database().ref("relay").set(1);
-}
-
-function relayOff(){
-firebase.database().ref("relay").set(0);
-}
-
-// LOGOUT
-function logout(){
-firebase.auth().signOut()
-.then(()=>window.location.href="index.html");
-}
 
 </script>
 
