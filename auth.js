@@ -1,103 +1,42 @@
-// EMAIL LOGIN
+function login(){
 
-function login() {
-
-let email = document.getElementById("email").value;
-let password = document.getElementById("password").value;
+let email=document.getElementById("email").value;
+let password=document.getElementById("password").value;
 
 firebase.auth()
-.signInWithEmailAndPassword(email, password)
-
-.then(() => {
-
-window.location.href = "dashboard.html";
-
+.signInWithEmailAndPassword(email,password)
+.then(()=>{
+window.location.href="home.html";
 })
-
-.catch((error) => {
-
-alert(error.message);
-
+.catch(err=>{
+alert(err.message);
 });
 
 }
 
-
-// GOOGLE LOGIN
-
-function googleLogin() {
-
-const provider =
-new firebase.auth.GoogleAuthProvider();
+function googleLogin(){
+const provider=new firebase.auth.GoogleAuthProvider();
 
 firebase.auth()
-
 .signInWithPopup(provider)
-
-.then((result) => {
-
-console.log(result.user);
-
-window.location.href = "dashboard.html";
-
-})
-
-.catch((error) => {
-
-alert(error.message);
-
-});
-
+.then(()=>window.location.href="home.html")
+.catch(e=>alert(e.message));
 }
 
-
-// FACEBOOK LOGIN
-
-function facebookLogin() {
-
-const provider =
-new firebase.auth.FacebookAuthProvider();
+function githubLogin(){
+const provider=new firebase.auth.GithubAuthProvider();
 
 firebase.auth()
-
 .signInWithPopup(provider)
-
-.then(() => {
-
-window.location.href = "dashboard.html";
-
-})
-
-.catch((error) => {
-
-alert(error.message);
-
-});
-
+.then(()=>window.location.href="home.html")
+.catch(e=>alert(e.message));
 }
 
-
-// GITHUB LOGIN
-
-function githubLogin() {
-
-const provider =
-new firebase.auth.GithubAuthProvider();
+function facebookLogin(){
+const provider=new firebase.auth.FacebookAuthProvider();
 
 firebase.auth()
-
 .signInWithPopup(provider)
-
-.then(() => {
-
-window.location.href = "dashboard.html";
-
-})
-
-.catch((error) => {
-
-alert(error.message);
-
-});
-
+.then(()=>window.location.href="home.html")
+.catch(e=>alert(e.message));
 }

@@ -8,84 +8,54 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script src="firebase-config.js"></script>
-
-<style>
-
-body{
-margin:0;
-font-family:Segoe UI;
-background:linear-gradient(135deg,#111827,#0f172a);
-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-color:white;
-}
-
-.panel{
-background:rgba(255,255,255,0.08);
-padding:40px;
-border-radius:20px;
-width:400px;
-text-align:center;
-backdrop-filter:blur(10px);
-}
-
-button{
-padding:15px;
-margin:10px;
-width:120px;
-border:none;
-border-radius:10px;
-cursor:pointer;
-}
-
-.on{background:#22c55e;}
-.off{background:#ef4444;}
-.back{background:#64748b;width:100%;}
-
-.status{
-margin:20px;
-padding:10px;
-background:#1f2937;
-border-radius:10px;
-}
-
-</style>
-
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<div class="panel">
+<div class="app">
 
-<h2>Relay Control Panel</h2>
+<div class="sidebar">
+<div class="logo">⚡ IoT CONTROL</div>
+<div class="nav" onclick="back()">⬅ Back</div>
+</div>
 
-<div id="status" class="status">OFF</div>
+<div class="main">
 
-<button class="on" onclick="on()">ON</button>
-<button class="off" onclick="off()">OFF</button>
+<h2>Relay Device Control</h2>
 
-<button class="back" onclick="back()">Back</button>
+<div class="card">
+
+<h3>Status: <span id="statusText">OFF</span></h3>
+
+<br>
+
+<button class="on" onclick="on()">TURN ON</button>
+<button class="off" onclick="off()">TURN OFF</button>
+
+</div>
+
+</div>
 
 </div>
 
 <script>
 
 firebase.auth().onAuthStateChanged(user=>{
-if(!user){
-window.location.href="index.html";
-}
+if(!user) window.location.href="index.html";
+});
+
+firebase.database().ref("relay").on("value",snap=>{
+document.getElementById("statusText").innerText =
+snap.val()==1 ? "ON" : "OFF";
 });
 
 function on(){
 firebase.database().ref("relay").set(1);
-document.getElementById("status").innerText="ON";
 }
 
 function off(){
 firebase.database().ref("relay").set(0);
-document.getElementById("status").innerText="OFF";
 }
 
 function back(){

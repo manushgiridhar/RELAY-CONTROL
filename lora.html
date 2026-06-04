@@ -1,67 +1,29 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>LoRa Messaging</title>
+<title>LoRa Terminal</title>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
 <script src="firebase-config.js"></script>
-
-<style>
-
-body{
-margin:0;
-font-family:Segoe UI;
-background:#020617;
-color:white;
-display:flex;
-justify-content:center;
-align-items:center;
-height:100vh;
-}
-
-.box{
-width:400px;
-background:rgba(255,255,255,0.08);
-padding:30px;
-border-radius:20px;
-}
-
-input{
-width:100%;
-padding:12px;
-border-radius:10px;
-border:none;
-margin:10px 0;
-}
-
-button{
-width:100%;
-padding:12px;
-border:none;
-border-radius:10px;
-background:#3b82f6;
-color:white;
-}
-
-.chat{
-margin-top:20px;
-height:200px;
-overflow:auto;
-background:#111827;
-padding:10px;
-border-radius:10px;
-}
-
-</style>
-
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<div class="box">
+<div class="app">
 
-<h2>LoRa Chat System</h2>
+<div class="sidebar">
+<div class="logo">📡 LORA SYSTEM</div>
+<div class="nav" onclick="back()">⬅ Back</div>
+</div>
+
+<div class="main">
+
+<h2>Message Terminal</h2>
+
+<div class="card">
 
 <input id="msg" placeholder="Send message">
 
@@ -71,25 +33,30 @@ border-radius:10px;
 
 </div>
 
+</div>
+
+</div>
+
 <script>
 
 function send(){
-let msg=document.getElementById("msg").value;
-
 firebase.database().ref("lora").set({
-text:msg,
+text:document.getElementById("msg").value,
 time:Date.now()
 });
 }
 
-firebase.database().ref("lora")
-.on("value",snap=>{
-let data=snap.val();
-if(data){
+firebase.database().ref("lora").on("value",snap=>{
+let d=snap.val();
+if(d){
 document.getElementById("chat").innerHTML +=
-"<div>➡ " + data.text + "</div>";
+"<div class='msg'>➡ "+d.text+"</div>";
 }
 });
+
+function back(){
+window.location.href="home.html";
+}
 
 </script>
 
