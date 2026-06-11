@@ -9,7 +9,28 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script src="firebase-config.js"></script>
+
 <link rel="stylesheet" href="style.css">
+
+<style>
+
+.userInfo{
+margin-bottom:20px;
+font-size:14px;
+opacity:0.8;
+}
+
+.count{
+font-size:28px;
+font-weight:700;
+margin-top:10px;
+}
+
+.hidden{
+display:none;
+}
+
+</style>
 
 </head>
 
@@ -18,44 +39,108 @@
 <div class="app">
 
 <!-- SIDEBAR -->
+
 <div class="sidebar">
 
-<div class="logo">CONTROL CENTER</div>
+<div class="logo">
+CONTROL CENTER
+</div>
 
-<div class="nav" onclick="openPage('master')">🧠 Master Unit</div>
-<div class="nav" onclick="openPage('borewell')">🌱 Borewell Unit</div>
-<div class="nav" onclick="openPage('valve')">🚰 Valve Unit</div>
-<div class="nav" onclick="openPage('well')">💧 Well Unit</div>
-<div class="nav" onclick="logout()">🚪 Logout</div>
+<div id="adminBtn"
+class="nav hidden"
+onclick="openAdmin()">
+⚙️ Admin Panel
+</div>
+
+<div class="nav"
+onclick="openPage('borewell')">
+🌱 Borewells
+</div>
+
+<div class="nav"
+onclick="openPage('valve')">
+🚰 Valves
+</div>
+
+<div class="nav"
+onclick="openPage('well')">
+💧 Wells
+</div>
+
+<div class="nav"
+onclick="logout()">
+🚪 Logout
+</div>
 
 </div>
 
 <!-- MAIN -->
+
 <div class="main">
 
-<h2>Fleet Status Overview</h2>
+<h2>Dashboard</h2>
+
+<div class="userInfo">
+
+<div id="userEmail">
+Loading...
+</div>
+
+<div id="userRole">
+Loading...
+</div>
+
+</div>
 
 <div class="grid">
 
 <div class="card">
-<h3>🧠 Master Control</h3>
-<p id="masterStatus">Loading...</p>
+
+<h3>🌱 Borewells</h3>
+
+<div id="borewellCount"
+class="count">
+0
+</div>
+
 </div>
 
 <div class="card">
-<h3>🌱 Borewell Unit</h3>
-<p id="boreStatus">Loading...</p>
+
+<h3>🚰 Valves</h3>
+
+<div id="valveCount"
+class="count">
+0
+</div>
+
 </div>
 
 <div class="card">
-<h3>🚰 Valve Unit</h3>
-<p id="valveStatus">Loading...</p>
+
+<h3>💧 Wells</h3>
+
+<div id="wellCount"
+class="count">
+0
 </div>
 
-<div class="card">
-<h3>💧 Well Unit</h3>
-<p id="wellStatus">Loading...</p>
 </div>
+
+</div>
+
+<br>
+
+<div class="card">
+
+<h3>Account Summary</h3>
+
+<br>
+
+<p>
+This dashboard is generated automatically
+from your device allocation.
+</p>
 
 </div>
 
@@ -65,67 +150,105 @@
 
 <script>
 
-/* ================= AUTH GUARD ================= */
-firebase.auth().onAuthStateChanged(user=>{
+let currentUserUid = null;
+
+/* ================= AUTH ================= */
+
+firebase.auth().onAuthStateChanged(async user=>{
+
 if(!user){
+
 window.location.href="index.html";
+return;
+
 }
+
+currentUserUid = user.uid;
+
+document.getElementById("userEmail")
+.innerText =
+"Email : " + (user.email || "No Email");
+
+loadUserData(user.uid);
+
 });
+
+/* ================= LOAD USER ================= */
+
+async function loadUserData(uid){
+
+let snap = await firebase.database()
+.ref("users/"+uid)
+.once("value");
+
+let userData = snap.val();
+
+if(!userData){
+
+alert("User profile missing");
+return;
+
+}
+
+document.getElementById("userRole")
+.innerText =
+"Role : " + userData.role;
+
+/* ADMIN BUTTON */
+
+if(userData.role === "admin"){
+
+document.getElementById("adminBtn")
+.classList.remove("hidden");
+
+}
+
+/* COUNTS */
+
+document.getElementById("borewellCount")
+.innerText =
+userData.borewellCount || 0;
+
+document.getElementById("valveCount")
+.innerText =
+userData.valveCount || 0;
+
+document.getElementById("wellCount")
+.innerText =
+userData.wellCount || 0;
+
+}
 
 /* ================= NAVIGATION ================= */
-function openPage(p){
-window.location.href = p + ".html";
+
+function openPage(page){
+
+window.location.href =
+page + ".html";
+
 }
+
+function openAdmin(){
+
+window.location.href =
+"admin.html";
+
+}
+
+/* ================= LOGOUT ================= */
 
 function logout(){
-firebase.auth().signOut().then(()=>{
-window.location.href="index.html";
-});
-}
 
-/* ================= HEARTBEAT ENGINE ================= */
+firebase.auth()
+.signOut()
+.then(()=>{
 
-function isOnline(hb){
-if(!hb) return false;
-return (Date.now() - hb) < 15000; // 15 sec rule
-}
-
-/* ================= REALTIME LISTENER ================= */
-
-firebase.database().ref("nodes").on("value", snap => {
-
-let d = snap.val();
-if(!d) return;
-
-/* MASTER */
-let m = d.master || {};
-document.getElementById("masterStatus").innerText =
-isOnline(m.heartbeat)
-? "ONLINE | WiFi: " + (m.wifi || "-") + " | LoRa: " + (m.lora || "-")
-: "OFFLINE";
-
-/* BOREWELL */
-let b = d.borewell || {};
-document.getElementById("boreStatus").innerText =
-isOnline(b.heartbeat)
-? "ONLINE | Soil: " + (b.soil || 0) + "% | V: " + (b.voltage || 0) + "V"
-: "OFFLINE";
-
-/* VALVE */
-let v = d.valve || {};
-document.getElementById("valveStatus").innerText =
-isOnline(v.heartbeat)
-? "ONLINE | Position: " + (v.position || "-")
-: "OFFLINE";
-
-/* WELL */
-let w = d.well || {};
-document.getElementById("wellStatus").innerText =
-isOnline(w.heartbeat)
-? "ONLINE | Water Level: " + (w.waterLevel || 0) + "%"
-: "OFFLINE";
+window.location.href =
+"index.html";
 
 });
+
+}
 
 </script>
 

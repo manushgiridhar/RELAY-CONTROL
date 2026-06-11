@@ -1,57 +1,212 @@
-// ================= AUTH CORE =================
+// ================= REDIRECT =================
 
-function redirectHome(){
-window.location.href = "home.html";
+function redirectHome() {
+    window.location.href = "home.html";
 }
 
-function handleError(err){
-console.error("AUTH ERROR:", err.code, err.message);
-alert(err.message);
+// ================= ERROR =================
+
+function handleError(error) {
+
+    console.error(
+        error.code,
+        error.message
+    );
+
+    alert(error.message);
+}
+
+// ================= USER PROFILE =================
+
+async function createUserProfile(user) {
+
+    const userRef =
+        firebase.database()
+        .ref("users/" + user.uid);
+
+    const snapshot =
+        await userRef.once("value");
+
+    if (snapshot.exists()) {
+        return;
+    }
+
+    await userRef.set({
+
+        email: user.email || "",
+
+        role: "user",
+
+        borewellCount: 0,
+        valveCount: 0,
+        wellCount: 0,
+
+        createdAt: Date.now()
+
+    });
+
+}
+
+// ================= REGISTER =================
+
+function register() {
+
+    const email =
+        document.getElementById("email").value.trim();
+
+    const password =
+        document.getElementById("password").value;
+
+    if (!email || !password) {
+
+        alert("Enter Email and Password");
+        return;
+
+    }
+
+    if (password.length < 6) {
+
+        alert("Password must be at least 6 characters");
+        return;
+
+    }
+
+    firebase.auth()
+        .createUserWithEmailAndPassword(
+            email,
+            password
+        )
+        .then(async (result) => {
+
+            await createUserProfile(
+                result.user
+            );
+
+            alert("Account Created Successfully");
+
+            redirectHome();
+
+        })
+        .catch(handleError);
+
 }
 
 // ================= EMAIL LOGIN =================
 
-function login(){
+function login() {
 
-let email = document.getElementById("email").value;
-let password = document.getElementById("password").value;
+    const email =
+        document.getElementById("email").value.trim();
 
-firebase.auth()
-.signInWithEmailAndPassword(email, password)
-.then(redirectHome)
-.catch(handleError);
+    const password =
+        document.getElementById("password").value;
+
+    firebase.auth()
+        .signInWithEmailAndPassword(
+            email,
+            password
+        )
+        .then(async (result) => {
+
+            await createUserProfile(
+                result.user
+            );
+
+            redirectHome();
+
+        })
+        .catch(handleError);
+
 }
 
-// ================= OAUTH FACTORY =================
+// ================= GOOGLE =================
 
-function socialLogin(provider){
-firebase.auth()
-.signInWithPopup(provider)
-.then(redirectHome)
-.catch(handleError);
+function googleLogin() {
+
+    const provider =
+        new firebase.auth.GoogleAuthProvider();
+
+    firebase.auth()
+        .signInWithPopup(provider)
+        .then(async (result) => {
+
+            await createUserProfile(
+                result.user
+            );
+
+            redirectHome();
+
+        })
+        .catch(handleError);
+
 }
 
-// ================= PROVIDERS =================
+// ================= GITHUB =================
 
-function googleLogin(){
-const provider = new firebase.auth.GoogleAuthProvider();
-socialLogin(provider);
+function githubLogin() {
+
+    const provider =
+        new firebase.auth.GithubAuthProvider();
+
+    firebase.auth()
+        .signInWithPopup(provider)
+        .then(async (result) => {
+
+            await createUserProfile(
+                result.user
+            );
+
+            redirectHome();
+
+        })
+        .catch(handleError);
+
 }
 
-function githubLogin(){
-const provider = new firebase.auth.GithubAuthProvider();
-socialLogin(provider);
-}
+// ================= FACEBOOK =================
 
-function facebookLogin(){
-const provider = new firebase.auth.FacebookAuthProvider();
-socialLogin(provider);
+function facebookLogin() {
+
+    const provider =
+        new firebase.auth.FacebookAuthProvider();
+
+    firebase.auth()
+        .signInWithPopup(provider)
+        .then(async (result) => {
+
+            await createUserProfile(
+                result.user
+            );
+
+            redirectHome();
+
+        })
+        .catch(handleError);
+
 }
 
 // ================= SESSION WATCHER =================
 
-firebase.auth().onAuthStateChanged(user=>{
-if(user){
-console.log("AUTH SESSION ACTIVE:", user.email);
-}
+firebase.auth()
+.onAuthStateChanged(async (user) => {
+
+    if (!user)
+        return;
+
+    try {
+
+        await createUserProfile(user);
+
+        console.log(
+            "AUTH ACTIVE:",
+            user.email
+        );
+
+    }
+    catch (e) {
+
+        console.error(e);
+
+    }
+
 });

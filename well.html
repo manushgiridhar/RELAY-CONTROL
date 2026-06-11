@@ -1,10 +1,45 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Well Unit</title>
+
+<title>Well Control</title>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script src="firebase-config.js"></script>
+
 <link rel="stylesheet" href="style.css">
+
+<style>
+
+.deviceCard{
+margin-bottom:15px;
+}
+
+.status{
+margin-top:10px;
+margin-bottom:10px;
+font-weight:600;
+}
+
+.btnRow{
+display:flex;
+gap:10px;
+margin-top:10px;
+}
+
+.running{
+color:#16a34a;
+}
+
+.stopped{
+color:#dc2626;
+}
+
+</style>
+
 </head>
 
 <body>
@@ -12,20 +47,32 @@
 <div class="app">
 
 <div class="sidebar">
-<div class="logo">WELL</div>
-<div class="nav" onclick="back()">Back</div>
+
+<div class="logo">
+WELL CONTROL
+</div>
+
+<div class="nav" onclick="goHome()">
+🏠 Dashboard
+</div>
+
+<div class="nav" onclick="logout()">
+🚪 Logout
+</div>
+
 </div>
 
 <div class="main">
 
+<h2>My Wells</h2>
+
+<br>
+
+<div id="wellContainer">
+
 <div class="card">
-<h3>Water Level System</h3>
-
-<p id="status"></p>
-<p>Water Level: <span id="level"></span>%</p>
-
-<button class="primary" onclick="pumpOn()">Pump ON</button>
-<button class="danger" onclick="pumpOff()">Pump OFF</button>
+Loading Wells...
+</div>
 
 </div>
 
@@ -35,27 +82,200 @@
 
 <script>
 
-function back(){
-location.href="home.html";
+let currentUid = null;
+
+/* ================= AUTH ================= */
+
+firebase.auth().onAuthStateChanged(user=>{
+
+if(!user){
+
+window.location.href = "index.html";
+return;
+
 }
 
-function pumpOn(){
-firebase.database().ref("nodes/well/pump").set(1);
-}
+currentUid = user.uid;
 
-function pumpOff(){
-firebase.database().ref("nodes/well/pump").set(0);
-}
+loadWells();
 
-firebase.database().ref("nodes/well").on("value",snap=>{
-let d=snap.val();
-
-document.getElementById("status").innerText =
-d.esp32 + " | " + d.lora;
-
-document.getElementById("level").innerText =
-d.waterLevel;
 });
+
+/* ================= LOAD WELLS ================= */
+
+function loadWells(){
+
+firebase.database()
+.ref("devices/"+currentUid+"/wells")
+.on("value",snap=>{
+
+let wells = snap.val();
+
+if(!wells){
+
+document.getElementById(
+"wellContainer"
+).innerHTML =
+'<div class="card">No Wells Assigned</div>';
+
+return;
+
+}
+
+let html = "";
+
+for(let wellId in wells){
+
+let well = wells[wellId];
+
+let pump = well.pump || 0;
+
+html += `
+
+<div class="card deviceCard">
+
+<h3>${well.name}</h3>
+
+<div class="status">
+
+Pump :
+
+<span class="${
+pump ? 'running' : 'stopped'
+}">
+
+${pump ? 'RUNNING' : 'STOPPED'}
+
+</span>
+
+</div>
+
+<div class="btnRow">
+
+<button
+class="success"
+onclick="startPump('${wellId}')">
+
+PUMP ON
+
+</button>
+
+<button
+class="danger"
+onclick="stopPump('${wellId}')">
+
+PUMP OFF
+
+</button>
+
+</div>
+
+</div>
+
+`;
+
+}
+
+document.getElementById(
+"wellContainer"
+).innerHTML = html;
+
+});
+
+}
+
+/* ================= CHECK VALVES ================= */
+
+async function hasOpenValve(){
+
+let snap =
+await firebase.database()
+.ref(
+"devices/"+currentUid+"/valves"
+)
+.once("value");
+
+let valves = snap.val();
+
+if(!valves)
+return false;
+
+for(let valveId in valves){
+
+if(valves[valveId].status === 1){
+
+return true;
+
+}
+
+}
+
+return false;
+
+}
+
+/* ================= START PUMP ================= */
+
+async function startPump(wellId){
+
+let valveOpen =
+await hasOpenValve();
+
+if(!valveOpen){
+
+alert(
+"⚠ WARNING\n\nAll valves are OFF.\n\nTurn ON at least one valve before starting the pump."
+);
+
+return;
+
+}
+
+await firebase.database()
+.ref(
+"devices/"+currentUid+
+"/wells/"+wellId+
+"/pump"
+)
+.set(1);
+
+}
+
+/* ================= STOP PUMP ================= */
+
+async function stopPump(wellId){
+
+await firebase.database()
+.ref(
+"devices/"+currentUid+
+"/wells/"+wellId+
+"/pump"
+)
+.set(0);
+
+}
+
+/* ================= NAVIGATION ================= */
+
+function goHome(){
+
+window.location.href =
+"home.html";
+
+}
+
+function logout(){
+
+firebase.auth()
+.signOut()
+.then(()=>{
+
+window.location.href =
+"index.html";
+
+});
+
+}
 
 </script>
 

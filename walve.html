@@ -1,10 +1,45 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Valve Unit</title>
+
+<title>Valve Control</title>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script src="firebase-config.js"></script>
+
 <link rel="stylesheet" href="style.css">
+
+<style>
+
+.deviceCard{
+margin-bottom:15px;
+}
+
+.status{
+margin-top:10px;
+margin-bottom:10px;
+font-weight:600;
+}
+
+.btnRow{
+display:flex;
+gap:10px;
+margin-top:10px;
+}
+
+.openStatus{
+color:#16a34a;
+}
+
+.closeStatus{
+color:#dc2626;
+}
+
+</style>
+
 </head>
 
 <body>
@@ -12,18 +47,33 @@
 <div class="app">
 
 <div class="sidebar">
-<div class="logo">VALVE</div>
-<div class="nav" onclick="back()">Back</div>
+
+<div class="logo">
+VALVE CONTROL
+</div>
+
+<div class="nav" onclick="goHome()">
+🏠 Dashboard
+</div>
+
+<div class="nav" onclick="logout()">
+🚪 Logout
+</div>
+
 </div>
 
 <div class="main">
 
-<div class="card">
-<h3>Valve Status</h3>
-<p id="status"></p>
+<h2>My Valves</h2>
 
-<button class="success" onclick="openValve()">OPEN</button>
-<button class="danger" onclick="closeValve()">CLOSE</button>
+<br>
+
+<div id="valveContainer">
+
+<div class="card">
+Loading Valves...
+</div>
+
 </div>
 
 </div>
@@ -32,23 +82,169 @@
 
 <script>
 
-function back(){
-location.href="home.html";
+let currentUid = null;
+
+/* ================= AUTH ================= */
+
+firebase.auth().onAuthStateChanged(user=>{
+
+if(!user){
+
+window.location.href="index.html";
+return;
+
 }
 
-function openValve(){
-firebase.database().ref("nodes/valve/position").set("open");
-}
+currentUid = user.uid;
 
-function closeValve(){
-firebase.database().ref("nodes/valve/position").set("closed");
-}
+loadValves();
 
-firebase.database().ref("nodes/valve").on("value",snap=>{
-let d=snap.val();
-document.getElementById("status").innerText =
-d.esp32 + " | " + d.lora + " | " + d.position;
 });
+
+/* ================= LOAD VALVES ================= */
+
+function loadValves(){
+
+firebase.database()
+.ref("devices/"+currentUid+"/valves")
+.on("value",snap=>{
+
+let valves = snap.val();
+
+if(!valves){
+
+document.getElementById(
+"valveContainer"
+).innerHTML =
+'<div class="card">No Valves Assigned</div>';
+
+return;
+
+}
+
+let html = "";
+
+for(let valveId in valves){
+
+let valve = valves[valveId];
+
+let status = valve.status || 0;
+
+html += `
+
+<div class="card deviceCard">
+
+<h3>${valve.name}</h3>
+
+<div class="status">
+
+Status :
+
+<span class="${
+status ? 'openStatus' : 'closeStatus'
+}">
+
+${status ? 'OPEN' : 'CLOSED'}
+
+</span>
+
+</div>
+
+<div class="btnRow">
+
+<button
+class="success"
+onclick="openValve('${valveId}')">
+
+OPEN
+
+</button>
+
+<button
+class="danger"
+onclick="closeValve('${valveId}')">
+
+CLOSE
+
+</button>
+
+</div>
+
+</div>
+
+`;
+
+}
+
+document.getElementById(
+"valveContainer"
+).innerHTML = html;
+
+});
+
+}
+
+/* ================= OPEN ================= */
+
+async function openValve(valveId){
+
+await firebase.database()
+.ref(
+"devices/"+currentUid+
+"/valves/"+valveId+
+"/status"
+)
+.set(1);
+
+}
+
+/* ================= CLOSE ================= */
+
+async function closeValve(valveId){
+
+/*
+Future Upgrade:
+
+Check if any running borewell
+depends on this valve.
+
+If closing this valve would
+leave the borewell with zero
+open valves, auto stop the
+borewell or show warning.
+*/
+
+await firebase.database()
+.ref(
+"devices/"+currentUid+
+"/valves/"+valveId+
+"/status"
+)
+.set(0);
+
+}
+
+/* ================= NAVIGATION ================= */
+
+function goHome(){
+
+window.location.href =
+"home.html";
+
+}
+
+function logout(){
+
+firebase.auth()
+.signOut()
+.then(()=>{
+
+window.location.href =
+"index.html";
+
+});
+
+}
 
 </script>
 

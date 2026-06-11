@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Admin Control Panel</title>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script src="firebase-config.js"></script>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+.userCard{
+margin-bottom:20px;
+}
+
+.formRow{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+margin-top:10px;
+}
+
+.formRow input{
+padding:10px;
+border-radius:10px;
+border:1px solid #ddd;
+width:120px;
+}
+
+.email{
+font-weight:700;
+margin-bottom:10px;
+}
+
+.mappingBox{
+margin-top:20px;
+padding:15px;
+background:#fafafa;
+border-radius:10px;
+border:1px solid #e5e5e5;
+}
+
+.mappingTitle{
+font-weight:700;
+margin-bottom:10px;
+}
+
+.bwBlock{
+margin-bottom:15px;
+padding:10px;
+border:1px solid #ddd;
+border-radius:10px;
+background:#fff;
+}
+
+.valveList{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+margin-top:10px;
+}
+
+.valveItem{
+padding:5px 10px;
+border-radius:8px;
+background:#f5f1e6;
+}
+
+.saveBtn{
+margin-top:15px;
+background:#111;
+color:#fff;
+}
+
+.adminBadge{
+display:inline-block;
+padding:4px 10px;
+border-radius:20px;
+background:#16a34a;
+color:#fff;
+font-size:12px;
+margin-left:10px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="app">
+
+<div class="sidebar">
+
+<div class="logo">
+ADMIN PANEL
+</div>
+
+<div class="nav" onclick="location.href='home.html'">
+🏠 Dashboard
+</div>
+
+<div class="nav" onclick="logout()">
+🚪 Logout
+</div>
+
+</div>
+
+<div class="main">
+
+<h2>
+System Administration
+<span class="adminBadge">ADMIN</span>
+</h2>
+
+<br>
+
+<div id="usersContainer">
+
+<div class="card">
+Loading Users...
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+firebase.auth().onAuthStateChanged(async user=>{
+
+if(!user){
+
+location.href="index.html";
+return;
+
+}
+
+let snap =
+await firebase.database()
+.ref("users/"+user.uid)
+.once("value");
+
+let data = snap.val();
+
+if(!data || data.role !== "admin"){
+
+alert("Access Denied");
+
+location.href="home.html";
+return;
+
+}
+
+loadUsers();
+
+});
+
+function logout(){
+
+firebase.auth()
+.signOut()
+.then(()=>{
+
+location.href="index.html";
+
+});
+
+}
+
+/* ================= LOAD USERS ================= */
+
+function loadUsers(){
+
+firebase.database()
+.ref("users")
+.on("value", async snapshot=>{
+
+let users = snapshot.val();
+
+let html = "";
+
+for(let uid in users){
+
+let user = users[uid];
+
+if(user.role === "admin")
+continue;
+
+html += `
+
+<div class="card userCard">
+
+<div class="email">
+${user.email || "No Email"}
+</div>
+
+<div class="formRow">
+
+<input
+type="number"
+id="bw_${uid}"
+placeholder="Borewells"
+value="${user.borewellCount || 0}"
+>
+
+<input
+type="number"
+id="valve_${uid}"
+placeholder="Valves"
+value="${user.valveCount || 0}"
+>
+
+<input
+type="number"
+id="well_${uid}"
+placeholder="Wells"
+value="${user.wellCount || 0}"
+>
+
+</div>
+
+<button
+class="saveBtn"
+onclick="saveAllocation('${uid}')">
+Save Counts
+</button>
+
+<div
+id="mapping_${uid}"
+class="mappingBox">
+Loading Mapping...
+</div>
+
+</div>
+
+`;
+
+}
+
+document.getElementById("usersContainer").innerHTML = html;
+
+for(let uid in users){
+
+if(users[uid].role === "admin")
+continue;
+
+renderMappings(uid);
+
+}
+
+});
+
+}
+
+/* ================= SAVE COUNTS ================= */
+
+async function saveAllocation(uid){
+
+let borewellCount =
+parseInt(
+document.getElementById("bw_"+uid).value
+) || 0;
+
+let valveCount =
+parseInt(
+document.getElementById("valve_"+uid).value
+) || 0;
+
+let wellCount =
+parseInt(
+document.getElementById("well_"+uid).value
+) || 0;
+
+await firebase.database()
+.ref("users/"+uid)
+.update({
+
+borewellCount,
+valveCount,
+wellCount
+
+});
+
+let ref =
+firebase.database()
+.ref("devices/"+uid);
+
+let snap =
+await ref.once("value");
+
+let devices =
+snap.val() || {};
+
+devices.borewells =
+devices.borewells || {};
+
+devices.valves =
+devices.valves || {};
+
+devices.wells =
+devices.wells || {};
+
+/* BOREWELLS */
+
+for(let i=1;i<=borewellCount;i++){
+
+devices.borewells["bw"+i] =
+
+devices.borewells["bw"+i] || {
+
+name:"Borewell "+i,
+status:0,
+valves:{}
+
+};
+
+}
+
+Object.keys(devices.borewells).forEach(key=>{
+
+let n =
+parseInt(key.replace("bw",""));
+
+if(n>borewellCount)
+delete devices.borewells[key];
+
+});
+
+/* VALVES */
+
+for(let i=1;i<=valveCount;i++){
+
+devices.valves["v"+i] =
+
+devices.valves["v"+i] || {
+
+name:"Valve "+i,
+status:0
+
+};
+
+}
+
+Object.keys(devices.valves).forEach(key=>{
+
+let n =
+parseInt(key.replace("v",""));
+
+if(n>valveCount)
+delete devices.valves[key];
+
+});
+
+/* WELLS */
+
+for(let i=1;i<=wellCount;i++){
+
+devices.wells["w"+i] =
+
+devices.wells["w"+i] || {
+
+name:"Well "+i,
+pump:0
+
+};
+
+}
+
+Object.keys(devices.wells).forEach(key=>{
+
+let n =
+parseInt(key.replace("w",""));
+
+if(n>wellCount)
+delete devices.wells[key];
+
+});
+
+await ref.set(devices);
+
+renderMappings(uid);
+
+alert("Allocation Saved");
+
+}
+
+/* ================= RENDER MAPPING ================= */
+
+async function renderMappings(uid){
+
+let snap =
+await firebase.database()
+.ref("devices/"+uid)
+.once("value");
+
+let devices = snap.val();
+
+if(!devices){
+
+document.getElementById(
+"mapping_"+uid
+).innerHTML =
+"No Devices Allocated";
+
+return;
+
+}
+
+let html =
+'<div class="mappingTitle">Borewell ↔ Valve Mapping</div>';
+
+let borewells =
+devices.borewells || {};
+
+let valves =
+devices.valves || {};
+
+for(let bw in borewells){
+
+html += `
+<div class="bwBlock">
+
+<b>${bw.toUpperCase()}</b>
+
+<div class="valveList">
+`;
+
+for(let v in valves){
+
+let checked =
+borewells[bw].valves &&
+borewells[bw].valves[v];
+
+html += `
+
+<label class="valveItem">
+
+<input
+type="checkbox"
+class="map_${uid}_${bw}"
+value="${v}"
+
+${checked ? "checked" : ""}>
+
+${v.toUpperCase()}
+
+</label>
+
+`;
+
+}
+
+html += `
+</div>
+
+<button
+class="saveBtn"
+onclick="saveMapping('${uid}','${bw}')">
+
+Save Mapping
+
+</button>
+
+</div>
+`;
+
+}
+
+document.getElementById(
+"mapping_"+uid
+).innerHTML = html;
+
+}
+
+/* ================= SAVE MAPPING ================= */
+
+async function saveMapping(uid,bw){
+
+let selected =
+document.querySelectorAll(
+".map_"+uid+"_"+bw
+);
+
+let valves = {};
+
+selected.forEach(cb=>{
+
+if(cb.checked){
+
+valves[cb.value] = true;
+
+}
+
+});
+
+await firebase.database()
+.ref(
+"devices/"+uid+
+"/borewells/"+bw+"/valves"
+)
+.set(valves);
+
+alert(
+bw.toUpperCase() +
+" Mapping Saved"
+);
+
+}
+
+</script>
+
+</body>
+</html>
