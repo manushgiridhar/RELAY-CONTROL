@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>IoT Dashboard</title>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script src="firebase-config.js"></script>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+background:#111;
+color:white;
+padding:20px;
+}
+
+h2{margin-bottom:10px;}
+
+.section{
+margin-top:25px;
+padding:15px;
+background:#1c1c1c;
+border-radius:10px;
+}
+
+.card{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:10px;
+margin:8px 0;
+background:#2a2a2a;
+border-radius:8px;
+}
+
+button{
+padding:6px 12px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+.on{background:#16a34a;color:white;}
+.off{background:#dc2626;color:white;}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>Smart IoT Dashboard</h2>
+
+<div id="userInfo">Loading...</div>
+
+<div class="section">
+<h3>Borewells</h3>
+<div id="borewellBox"></div>
+</div>
+
+<div class="section">
+<h3>Valves</h3>
+<div id="valveBox"></div>
+</div>
+
+<div class="section">
+<h3>Wells</h3>
+<div id="wellBox"></div>
+</div>
+
+<script>
+
+let uid = null;
+
+/* ================= LOGIN CHECK ================= */
+firebase.auth().onAuthStateChanged(async user => {
+
+if(!user){
+window.location.href="index.html";
+return;
+}
+
+uid = user.uid;
+
+document.getElementById("userInfo").innerText =
+"Logged in: " + (user.email || "");
+
+await ensureUserExists(user);
+
+listenChanges();
+
+});
+
+/* ================= AUTO CREATE USER ================= */
+
+async function ensureUserExists(user){
+
+let ref = firebase.database().ref("users/"+user.uid);
+let snap = await ref.once("value");
+
+if(!snap.exists()){
+
+await ref.set({
+email: user.email || "",
+borewellCount: 0,
+valveCount: 0,
+wellCount: 0,
+createdAt: Date.now()
+});
+
+/* create device structure */
+await firebase.database().ref("devices/"+user.uid).set({
+borewells:{},
+valves:{},
+wells:{}
+});
+
+}
+
+}
+
+/* ================= LIVE LISTEN ================= */
+
+function listenChanges(){
+
+firebase.database().ref("users/"+uid).on("value", loadData);
+firebase.database().ref("devices/"+uid).on("value", loadData);
+
+}
+
+/* ================= LOAD UI ================= */
+
+async function loadData(){
+
+let userSnap = await firebase.database().ref("users/"+uid).once("value");
+let user = userSnap.val() || {};
+
+let devSnap = await firebase.database().ref("devices/"+uid).once("value");
+let dev = devSnap.val() || {};
+
+renderValves(dev.valves || {}, user.valveCount || 0);
+renderBorewells(dev.borewells || {}, user.borewellCount || 0, dev.valves || {});
+renderWells(dev.wells || {}, user.wellCount || 0, dev.valves || {});
+
+}
+
+/* ================= VALVES ================= */
+
+function renderValves(valves, count){
+
+let html="";
+
+for(let i=1;i<=count;i++){
+
+let k="v"+i;
+let s=valves[k]?.status||0;
+
+html+=`
+<div class="card">
+<div>${k.toUpperCase()}</div>
+
+<button class="${s?'on':'off'}"
+onclick="toggleValve('${k}',${s})">
+
+${s?'ON':'OFF'}
+
+</button>
+
+</div>`;
+}
+
+document.getElementById("valveBox").innerHTML=html;
+}
+
+/* ================= BOREWELL ================= */
+
+function renderBorewells(bws,count,valves){
+
+let html="";
+
+for(let i=1;i<=count;i++){
+
+let k="b"+i;
+let s=bws[k]?.status||0;
+
+html+=`
+<div class="card">
+<div>${k.toUpperCase()}</div>
+
+<button class="${s?'on':'off'}"
+onclick="toggleDevice('borewells','${k}',${s},valves)">
+
+${s?'ON':'OFF'}
+
+</button>
+
+</div>`;
+}
+
+document.getElementById("borewellBox").innerHTML=html;
+}
+
+/* ================= WELLS ================= */
+
+function renderWells(wells,count,valves){
+
+let html="";
+
+for(let i=1;i<=count;i++){
+
+let k="w"+i;
+let s=wells[k]?.status||0;
+
+html+=`
+<div class="card">
+<div>${k.toUpperCase()}</div>
+
+<button class="${s?'on':'off'}"
+onclick="toggleDevice('wells','${k}',${s},valves)">
+
+${s?'ON':'OFF'}
+
+</button>
+
+</div>`;
+}
+
+document.getElementById("wellBox").innerHTML=html;
+}
+
+/* ================= VALVE TOGGLE ================= */
+
+function toggleValve(k,s){
+
+firebase.database().ref("devices/"+uid+"/valves/"+k)
+.set({status:s?0:1});
+
+}
+
+/* ================= SAFETY CHECK ================= */
+
+function hasValveOn(valves){
+
+for(let k in valves){
+if(valves[k].status===1) return true;
+}
+return false;
+}
+
+/* ================= BOREWELL / WELL TOGGLE ================= */
+
+function toggleDevice(type,key,current,valves){
+
+if(!current && !hasValveOn(valves)){
+alert("⚠ Turn ON at least one valve first");
+return;
+}
+
+firebase.database()
+.ref("devices/"+uid+"/"+type+"/"+key)
+.set({status:current?0:1});
+
+}
+
+</script>
+
+</body>
+</html>
