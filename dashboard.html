@@ -2,7 +2,7 @@
 <html>
 <head>
 
-<title>IoT Dashboard</title>
+<title>IoT Smart Dashboard</title>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -20,12 +20,14 @@ color:#fff;
 padding:20px;
 }
 
-h2{margin-bottom:10px;}
+h2{
+margin-bottom:5px;
+}
 
 .section{
 margin-top:20px;
 padding:15px;
-background:#1e1e1e;
+background:#1f1f1f;
 border-radius:10px;
 }
 
@@ -42,12 +44,22 @@ border-radius:8px;
 button{
 padding:6px 12px;
 border:none;
-border-radius:5px;
+border-radius:6px;
 cursor:pointer;
+font-weight:bold;
 }
 
 .on{background:#16a34a;color:#fff;}
 .off{background:#dc2626;color:#fff;}
+
+.warn{
+background:#facc15;
+color:#000;
+padding:10px;
+border-radius:8px;
+margin-bottom:10px;
+display:none;
+}
 
 </style>
 
@@ -55,22 +67,24 @@ cursor:pointer;
 
 <body>
 
-<h2>IoT Smart Dashboard</h2>
+<h2>⚙ IoT Control Dashboard</h2>
 
 <div id="userInfo">Loading...</div>
 
+<div id="warning" class="warn"></div>
+
 <div class="section">
-<h3>Valves</h3>
+<h3>🚰 Valves</h3>
 <div id="valves"></div>
 </div>
 
 <div class="section">
-<h3>Borewells</h3>
+<h3>🌱 Borewells</h3>
 <div id="borewells"></div>
 </div>
 
 <div class="section">
-<h3>Wells</h3>
+<h3>💧 Wells</h3>
 <div id="wells"></div>
 </div>
 
@@ -91,12 +105,12 @@ uid = user.uid;
 document.getElementById("userInfo").innerText =
 "Logged in: " + (user.email || "");
 
-loadData();
+loadAll();
 
 });
 
-/* ================= LOAD DATA ================= */
-async function loadData(){
+/* ================= LOAD ================= */
+async function loadAll(){
 
 let userSnap = await firebase.database().ref("users/"+uid).once("value");
 let user = userSnap.val() || {};
@@ -110,6 +124,35 @@ renderWells(dev.wells || {}, user.wellCount || 0);
 
 }
 
+/* ================= WARNING ================= */
+function showWarning(msg){
+let box = document.getElementById("warning");
+box.innerText = msg;
+box.style.display = "block";
+
+setTimeout(()=>{
+box.style.display = "none";
+},3000);
+}
+
+/* ================= CHECK VALVES ================= */
+async function isValveOn(){
+
+let snap = await firebase.database()
+.ref("devices/"+uid+"/valves")
+.once("value");
+
+let valves = snap.val() || {};
+
+for(let k in valves){
+if(valves[k] && valves[k].status === 1){
+return true;
+}
+}
+
+return false;
+}
+
 /* ================= VALVES ================= */
 function renderValves(valves,count){
 
@@ -120,7 +163,7 @@ for(let i=1;i<=count;i++){
 let k="v"+i;
 let s=valves[k]?.status || 0;
 
-html+=`
+html += `
 <div class="card">
 <div>${k.toUpperCase()}</div>
 
@@ -130,14 +173,20 @@ onclick="toggleValve('${k}',${s})">
 ${s?'ON':'OFF'}
 
 </button>
-
 </div>`;
 }
 
 document.getElementById("valves").innerHTML = html;
 }
 
-/* ================= BOREWELLS ================= */
+function toggleValve(key,state){
+
+firebase.database()
+.ref("devices/"+uid+"/valves/"+key)
+.set({status: state?0:1});
+}
+
+/* ================= BOREWELL ================= */
 function renderBorewells(bws,count){
 
 let html="";
@@ -147,7 +196,7 @@ for(let i=1;i<=count;i++){
 let k="b"+i;
 let s=bws[k]?.status || 0;
 
-html+=`
+html += `
 <div class="card">
 <div>${k.toUpperCase()}</div>
 
@@ -157,11 +206,28 @@ onclick="toggleBorewell('${k}',${s})">
 ${s?'ON':'OFF'}
 
 </button>
-
 </div>`;
 }
 
 document.getElementById("borewells").innerHTML = html;
+}
+
+async function toggleBorewell(key,state){
+
+// 🔥 IF TURNING ON → CHECK VALVES
+if(!state){
+
+let ok = await isValveOn();
+
+if(!ok){
+showWarning("⚠ Cannot start Borewell. No Valve is ON!");
+return;
+}
+}
+
+firebase.database()
+.ref("devices/"+uid+"/borewells/"+key)
+.set({status: state?0:1});
 }
 
 /* ================= WELLS ================= */
@@ -174,7 +240,7 @@ for(let i=1;i<=count;i++){
 let k="w"+i;
 let s=wells[k]?.status || 0;
 
-html+=`
+html += `
 <div class="card">
 <div>${k.toUpperCase()}</div>
 
@@ -184,74 +250,26 @@ onclick="toggleWell('${k}',${s})">
 ${s?'ON':'OFF'}
 
 </button>
-
 </div>`;
 }
 
 document.getElementById("wells").innerHTML = html;
 }
 
-/* ================= VALVE TOGGLE ================= */
-function toggleValve(k,s){
+async function toggleWell(key,state){
 
-firebase.database()
-.ref("devices/"+uid+"/valves/"+k)
-.set({status: s?0:1});
-}
-
-/* ================= CHECK VALVES ================= */
-async function isAnyValveOn(){
-
-let snap =
-await firebase.database()
-.ref("devices/"+uid+"/valves")
-.once("value");
-
-let valves = snap.val() || {};
-
-for(let v in valves){
-if(valves[v] && valves[v].status === 1){
-return true;
-}
-}
-
-return false;
-}
-
-/* ================= BOREWELL CONTROL ================= */
-async function toggleBorewell(k,state){
-
-// if trying to TURN ON
 if(!state){
 
-let ok = await isAnyValveOn();
+let ok = await isValveOn();
 
 if(!ok){
-alert("⚠ Cannot start Borewell. No valve is ON.");
+showWarning("⚠ Cannot start Pump. No Valve is ON!");
 return;
 }
 }
 
 firebase.database()
-.ref("devices/"+uid+"/borewells/"+k)
-.set({status: state?0:1});
-}
-
-/* ================= WELL CONTROL ================= */
-async function toggleWell(k,state){
-
-if(!state){
-
-let ok = await isAnyValveOn();
-
-if(!ok){
-alert("⚠ Cannot start Well Pump. No valve is ON.");
-return;
-}
-}
-
-firebase.database()
-.ref("devices/"+uid+"/wells/"+k)
+.ref("devices/"+uid+"/wells/"+key)
 .set({status: state?0:1});
 }
 
