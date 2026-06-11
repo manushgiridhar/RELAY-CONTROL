@@ -6,7 +6,7 @@ function handleError(error) {
 
 // ================= REDIRECT =================
 function redirectHome() {
-    window.location.href = "home.html";
+    window.location.href = "dashboard.html";
 }
 
 // ================= CREATE USER PROFILE (FIXED) =================
