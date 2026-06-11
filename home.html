@@ -38,43 +38,20 @@ display:none;
 
 <div class="app">
 
-<!-- SIDEBAR -->
-
 <div class="sidebar">
 
-<div class="logo">
-CONTROL CENTER
-</div>
+<div class="logo">CONTROL CENTER</div>
 
-<div id="adminBtn"
-class="nav hidden"
-onclick="openAdmin()">
+<div id="adminBtn" class="nav hidden" onclick="openAdmin()">
 ⚙️ Admin Panel
 </div>
 
-<div class="nav"
-onclick="openPage('borewell')">
-🌱 Borewells
-</div>
-
-<div class="nav"
-onclick="openPage('valve')">
-🚰 Valves
-</div>
-
-<div class="nav"
-onclick="openPage('well')">
-💧 Wells
-</div>
-
-<div class="nav"
-onclick="logout()">
-🚪 Logout
-</div>
+<div class="nav" onclick="openPage('borewell')">🌱 Borewells</div>
+<div class="nav" onclick="openPage('valve')">🚰 Valves</div>
+<div class="nav" onclick="openPage('well')">💧 Wells</div>
+<div class="nav" onclick="logout()">🚪 Logout</div>
 
 </div>
-
-<!-- MAIN -->
 
 <div class="main">
 
@@ -82,49 +59,26 @@ onclick="logout()">
 
 <div class="userInfo">
 
-<div id="userEmail">
-Loading...
-</div>
-
-<div id="userRole">
-Loading...
-</div>
+<div id="userEmail">Loading...</div>
+<div id="userRole">Loading...</div>
 
 </div>
 
 <div class="grid">
 
 <div class="card">
-
 <h3>🌱 Borewells</h3>
-
-<div id="borewellCount"
-class="count">
-0
-</div>
-
+<div id="borewellCount" class="count">0</div>
 </div>
 
 <div class="card">
-
 <h3>🚰 Valves</h3>
-
-<div id="valveCount"
-class="count">
-0
-</div>
-
+<div id="valveCount" class="count">0</div>
 </div>
 
 <div class="card">
-
 <h3>💧 Wells</h3>
-
-<div id="wellCount"
-class="count">
-0
-</div>
-
+<div id="wellCount" class="count">0</div>
 </div>
 
 </div>
@@ -132,16 +86,9 @@ class="count">
 <br>
 
 <div class="card">
-
 <h3>Account Summary</h3>
-
 <br>
-
-<p>
-This dashboard is generated automatically
-from your device allocation.
-</p>
-
+<p>This dashboard is generated automatically from your device allocation.</p>
 </div>
 
 </div>
@@ -154,100 +101,90 @@ let currentUserUid = null;
 
 /* ================= AUTH ================= */
 
-firebase.auth().onAuthStateChanged(async user=>{
+firebase.auth().onAuthStateChanged(async (user) => {
 
-if(!user){
-
-window.location.href="index.html";
+if (!user) {
+window.location.href = "index.html";
 return;
-
 }
 
 currentUserUid = user.uid;
 
-document.getElementById("userEmail")
-.innerText =
+document.getElementById("userEmail").innerText =
 "Email : " + (user.email || "No Email");
 
-loadUserData(user.uid);
+await loadUserData(user);
 
 });
 
 /* ================= LOAD USER ================= */
 
-async function loadUserData(uid){
+async function loadUserData(user) {
 
-let snap = await firebase.database()
-.ref("users/"+uid)
-.once("value");
-
+let ref = firebase.database().ref("users/" + user.uid);
+let snap = await ref.once("value");
 let userData = snap.val();
 
-if(!userData){
+/* 🔥 FIX: auto-create missing profile */
+if (!userData) {
 
-alert("User profile missing");
-return;
+console.log("Auto-creating missing user profile...");
 
+await ref.set({
+email: user.email || "",
+role: "user",
+borewellCount: 0,
+valveCount: 0,
+wellCount: 0,
+createdAt: Date.now()
+});
+
+userData = {
+role: "user",
+borewellCount: 0,
+valveCount: 0,
+wellCount: 0
+};
 }
 
-document.getElementById("userRole")
-.innerText =
+/* ================= UI ================= */
+
+document.getElementById("userRole").innerText =
 "Role : " + userData.role;
 
 /* ADMIN BUTTON */
-
-if(userData.role === "admin"){
-
-document.getElementById("adminBtn")
-.classList.remove("hidden");
-
+if (userData.role === "admin") {
+document.getElementById("adminBtn").classList.remove("hidden");
 }
 
 /* COUNTS */
-
-document.getElementById("borewellCount")
-.innerText =
+document.getElementById("borewellCount").innerText =
 userData.borewellCount || 0;
 
-document.getElementById("valveCount")
-.innerText =
+document.getElementById("valveCount").innerText =
 userData.valveCount || 0;
 
-document.getElementById("wellCount")
-.innerText =
+document.getElementById("wellCount").innerText =
 userData.wellCount || 0;
 
 }
 
 /* ================= NAVIGATION ================= */
 
-function openPage(page){
-
-window.location.href =
-page + ".html";
-
+function openPage(page) {
+window.location.href = page + ".html";
 }
 
-function openAdmin(){
-
-window.location.href =
-"admin.html";
-
+function openAdmin() {
+window.location.href = "admin.html";
 }
 
 /* ================= LOGOUT ================= */
 
-function logout(){
-
-firebase.auth()
-.signOut()
-.then(()=>{
-
-window.location.href =
-"index.html";
-
+function logout() {
+firebase.auth().signOut().then(() => {
+window.location.href = "index.html";
 });
-
 }
 
 </script>
