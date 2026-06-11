@@ -1,29 +1,20 @@
-// ================= ERROR HANDLER =================
 function handleError(error) {
     console.error(error.code, error.message);
     alert(error.message);
 }
 
-// ================= REDIRECT =================
-function redirectHome() {
-    window.location.href = "dashboard.html";
-}
-
-// ================= CREATE USER PROFILE (FIXED) =================
+// ================= CREATE USER =================
 async function createUserProfile(user) {
-
-    if (!user || !user.uid) return;
 
     const uid = user.uid;
 
     const userRef = firebase.database().ref("users/" + uid);
     const deviceRef = firebase.database().ref("devices/" + uid);
 
-    const snapshot = await userRef.once("value");
+    const snap = await userRef.once("value");
 
-    if (!snapshot.exists()) {
+    if (!snap.exists()) {
 
-        // 🔥 USER PROFILE
         await userRef.set({
             email: user.email || "",
             role: "user",
@@ -33,33 +24,12 @@ async function createUserProfile(user) {
             createdAt: Date.now()
         });
 
-        // 🔥 DEVICE STRUCTURE (IMPORTANT FIX)
         await deviceRef.set({
             borewells: {},
             valves: {},
             wells: {}
         });
     }
-}
-
-// ================= REGISTER =================
-function register() {
-
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value;
-
-    if (!email || !password) {
-        alert("Enter Email and Password");
-        return;
-    }
-
-    firebase.auth()
-        .createUserWithEmailAndPassword(email, password)
-        .then(async (result) => {
-            await createUserProfile(result.user);
-            redirectHome();
-        })
-        .catch(handleError);
 }
 
 // ================= LOGIN =================
@@ -70,9 +40,24 @@ function login() {
 
     firebase.auth()
         .signInWithEmailAndPassword(email, password)
-        .then(async (result) => {
-            await createUserProfile(result.user);
-            redirectHome();
+        .then(async (res) => {
+            await createUserProfile(res.user);
+            window.location.replace("dashboard.html"); // 🔥 FIXED
+        })
+        .catch(handleError);
+}
+
+// ================= REGISTER =================
+function register() {
+
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+
+    firebase.auth()
+        .createUserWithEmailAndPassword(email, password)
+        .then(async (res) => {
+            await createUserProfile(res.user);
+            window.location.replace("dashboard.html"); // 🔥 FIXED
         })
         .catch(handleError);
 }
@@ -84,9 +69,9 @@ function googleLogin() {
 
     firebase.auth()
         .signInWithPopup(provider)
-        .then(async (result) => {
-            await createUserProfile(result.user);
-            redirectHome();
+        .then(async (res) => {
+            await createUserProfile(res.user);
+            window.location.replace("dashboard.html");
         })
         .catch(handleError);
 }
@@ -98,9 +83,9 @@ function githubLogin() {
 
     firebase.auth()
         .signInWithPopup(provider)
-        .then(async (result) => {
-            await createUserProfile(result.user);
-            redirectHome();
+        .then(async (res) => {
+            await createUserProfile(res.user);
+            window.location.replace("dashboard.html");
         })
         .catch(handleError);
 }
@@ -112,16 +97,13 @@ function facebookLogin() {
 
     firebase.auth()
         .signInWithPopup(provider)
-        .then(async (result) => {
-            await createUserProfile(result.user);
-            redirectHome();
+        .then(async (res) => {
+            await createUserProfile(res.user);
+            window.location.replace("dashboard.html");
         })
         .catch(handleError);
 }
 
-// ================= SESSION WATCH =================
-firebase.auth().onAuthStateChanged(async (user) => {
-    if (!user) return;
-
-    await createUserProfile(user);
-});
+// ================= REMOVE AUTO REDIRECT (IMPORTANT FIX) =================
+// ❌ DO NOT redirect here anymore
+firebase.auth().onAuthStateChanged(() => {});
